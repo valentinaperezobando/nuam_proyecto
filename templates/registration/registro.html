@@ -1,0 +1,29 @@
+{%extends 'base.html' %}
+
+{%block content%}
+<div class="row" style="margin-top: 1rem">
+    <div class="col-md-6 d-inline-block mx-auto">
+    <div>
+        <h1 class="text-center">Registrarse</h1>
+    </div>
+        <form method="post" action="{% url 'registro' %}">
+            {%csrf_token %}
+            <div class="mb-3">
+                <label for="exampleInputEmail1" class="form-label">Email</label>
+                <input type="text" class="form-control" id="email" placeholder="email" name="email" required>
+            </div>
+            <div class="mb-3">
+                <label for="exampleInputPassword1" class="form-label text-center">Password</label>
+                <input type="password" class="form-control" id="exampleInputPassword1" placeholder="Password" name = "password" required>
+            </div>
+            <div class="mb-3">
+                <label for="exampleInputPassword1" class="form-label text-center">Repita el Password</label>
+                <input type="password" class="form-control" id="exampleInputPassword1" placeholder="Repita el password" name ="pass_repeat" required>
+            </div>
+            <button type="submit" class="btn btn-primary" style = 'margin-top: 2rem;'>Regístrate</button>
+            </form>
+        <p style="margin-top: 1rem; font-size: 1rem;">Si ya tienes una cuenta, <a href="/login">Accede</a></p>
+    </div>
+</div>  
+{%endblock%}
+
