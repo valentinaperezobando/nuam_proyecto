@@ -29,3 +29,21 @@ class RegistroView(View):
         user.save()
         messages.success(req, 'Usuario creado')
         return redirect('/')
+
+def carga_masiva(request):
+    return render(request, 'carga_masiva.html')
+
+def auditoria(request):
+    return render(request, 'auditoria.html')
+
+def calificaciones(request):
+    return render(request, 'calificaciones.html')
+
+def crear_calificacion(request):
+    return render(request, 'crear_calificacion.html')
+
+def eliminar_calificacion(request):
+    return render(request, 'eliminar_calificacion.html')
+
+def editar_calificacion(request):
+    return render(request, 'editar_calificacion.html')

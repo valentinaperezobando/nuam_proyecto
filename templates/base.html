@@ -32,29 +32,39 @@
 <body>
     <nav class="navbar navbar-expand-lg bg-body-tertiary">
     <div class="container-fluid">
-        <a class="navbar-brand" href="#">Navbar</a>
+        <a class="navbar-brand" href="#">Gestión Tributaria</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
             <li class="nav-item">
-            <a class="nav-link active" aria-current="page" href="#">Home</a>
+            <a class="nav-link active" aria-current="page" href="/">Home</a>
             </li>
             <li class="nav-item">
-            <a class="nav-link" href="#">Link</a>
+            <a class="nav-link" href="#">Acerca de</a>
             </li>
+            {%if user.usuario.rol == 'analista' %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'carga_masiva' %}">Carga masiva</a>
+                </li>
+            {%elif user.usuario.rol == 'contador' %}
             <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                Dropdown
-            </a>
-            <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="#">Action</a></li>
-                <li><a class="dropdown-item" href="#">Another action</a></li>
-                <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item" href="#">Something else here</a></li>
-            </ul>
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Calificaciones Tributarias
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{% url 'calificaciones' %}">Ver Calificaciones</a></li>
+                    <li><a class="dropdown-item" href="{% url 'crear_calificacion' %}">Crear Calificación</a></li>
+                    <li><a class="dropdown-item" href="{% url 'editar_calificacion' %}">Editar Calificación</a></li>
+                    <li><a class="dropdown-item" href="{% url 'eliminar_calificacion' %}">Eliminar Calificación</a></li>
+                </ul>
             </li>
+            {%elif user.usuario.rol == 'auditor' %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'auditoria' %}">Auditoría</a>
+                </li>
+            {%endif%}  
         </ul>
         {%if user.is_authenticated %}
             <form class="d-flex mb-2 mt-1" role="search" method="post" action="{% url 'logout' %}">

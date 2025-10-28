@@ -4,10 +4,9 @@ from django.contrib.auth.models import User
 
 # Create your models here.
 class UserProfile(models.Model):
-    roles =(('usuario', 'Usuario'), ('admin', 'Admin'))
+    roles =(('usuario', 'Usuario'), ('admin', 'Admin'), ('analista', 'Analista'), ('contador', 'Contador'), ('auditor', 'Auditor'))
     user = models.OneToOneField(User, related_name = 'usuario', on_delete=models.CASCADE)
     rol = models.CharField(max_length=255, choices=roles, default = 'usuario')
-    
     def __str__(self):
         return f'{self.user.first_name} {self.user.last_name} {(self.rol)}'
     
