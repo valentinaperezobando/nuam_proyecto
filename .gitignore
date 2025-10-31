@@ -1,2 +1,8 @@
 .env
 .venv
+
+# Ignorar todos los archivos dentro de media/uploads/
+media/uploads/*
+
+# Pero mantener la carpeta
+!media/uploads/.gitkeep

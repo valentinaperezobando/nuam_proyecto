@@ -48,9 +48,10 @@ class LoteCarga(models.Model):
         pass
 
 class Archivo(models.Model):
+    archivo = models.FileField(upload_to='uploads/', null=False, default=False)
     nombre = models.CharField(max_length=100)
     tipo = models.CharField(max_length=30)
-    hash = models.CharField(max_length=200)
+    hash = models.CharField(max_length=200, unique=True)
     estado = models.CharField(max_length=50)
     lote_carga = models.ForeignKey(LoteCarga, on_delete=models.CASCADE)
 
