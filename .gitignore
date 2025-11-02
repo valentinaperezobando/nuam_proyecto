@@ -11,6 +11,14 @@ __pycache__/
 # Configuración privada
 .env
 
+.venv
+
+# Ignorar todos los archivos dentro de media/uploads/
+media/uploads/*
+
+# Pero mantener la carpeta
+!media/uploads/.gitkeep
+
 # Base de datos local
 *.sqlite3
 
