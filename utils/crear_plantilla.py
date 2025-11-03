@@ -1,7 +1,11 @@
 import os
-import django
+import django, sys
 
 # Configura el entorno Django
+# Ruta absoluta al directorio donde está manage.py
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(BASE_DIR)
+
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'nuam_proyecto.settings')
 django.setup()
 from app_nuam.models import Plantilla
