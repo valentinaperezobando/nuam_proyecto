@@ -53,10 +53,16 @@ def redirigir_despues_login(request):
     elif perfil and perfil.rol == 'auditor':
         return redirect('/auditoria/')
     else:
+        messages.warning(request, 'Tu rol no tiene asignado un módulo de acceso.')
         return redirect('/')
     
 @login_required
 def carga_masiva(request):
+    perfil = getattr(request.user, 'usuario', None)
+    if not perfil or perfil.rol != 'analista':
+        messages.warning(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('home')
+    
     if request.method == 'POST':
         archivos_subidos = request.FILES.getlist('archivo')
         if not archivos_subidos:
@@ -162,6 +168,10 @@ def detalles_registro(request, id):
     return render(request, 'detalles_registro.html', {'normalizados': normalizados})
 
 def auditoria(request):
+    perfil = getattr(request.user, 'usuario', None)
+    if not perfil or perfil.rol != 'auditor':
+        messages.warning(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('home')
     return render(request, 'auditoria.html')
 
 @login_required
@@ -368,3 +378,4 @@ def detalle_calificacion(request, pk):
     }
     
     return render(request, 'calificaciones/detalle_calificacion.html', context)
+
