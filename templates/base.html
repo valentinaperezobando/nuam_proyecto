@@ -55,10 +55,10 @@
                     Calificaciones Tributarias
                 </a>
                 <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="{% url 'calificaciones' %}">Ver Calificaciones</a></li>
+                    <li><a class="dropdown-item" href="{% url 'listar_calificaciones' %}">Ver Calificaciones</a></li>
                     <li><a class="dropdown-item" href="{% url 'crear_calificacion' %}">Crear Calificación</a></li>
-                    <li><a class="dropdown-item" href="{% url 'editar_calificacion' %}">Editar Calificación</a></li>
-                    <li><a class="dropdown-item" href="{% url 'eliminar_calificacion' %}">Eliminar Calificación</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{% url 'carga_masiva' %}">Carga Masiva</a></li>
                 </ul>
             </li>
             {%elif user.usuario.rol == 'auditor' %}

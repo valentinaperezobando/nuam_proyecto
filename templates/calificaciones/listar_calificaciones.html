@@ -1,0 +1,214 @@
+{%extends 'base.html'%}
+{% load static %}
+{% load calificacion_tags %}
+
+{%block content%}
+    <div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2 class="fw-bold">Operaciones - Calificaciones Tributarias</h2>
+        </div>
+        <div class="col-md-6 text-end">
+            <form method="get" class="d-inline">
+                <div class="input-group" style="max-width: 300px; float: right;">
+                    <input type="text" name="search" class="form-control" placeholder="Buscar..." value="{{ search }}">
+                    <button class="btn btn-outline-secondary" type="submit">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <form method="get" class="row g-2">
+                <div class="col-auto">
+                    Mercado
+                    {{ filtro_form.mercado }}
+                </div>
+                <div class="col-auto">
+                    Origen
+                    {{ filtro_form.origen }}
+                </div>
+                <div class="col-auto">
+                    Ejercicio
+                    {{ filtro_form.ejercicio }}
+                </div>
+                <div class="col-auto">
+                    Estado
+                    {{ filtro_form.estado }}
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary btn-sm">Aplicar Filtros</button>
+                    <a href="{% url 'listar_calificaciones' %}" class="btn btn-secondary btn-sm">Limpiar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Botones de acción -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <a href="{% url 'crear_calificacion' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Ingresar
+            </a>
+            <button class="btn btn-outline-secondary" id="btnModificar" disabled>
+                Modificar
+            </button>
+            <button class="btn btn-outline-danger" id="btnEliminar" disabled>
+                Eliminar
+            </button>
+        </div>
+    </div>
+
+    <!-- Tabla de calificaciones -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 50px;">
+                                        <input type="checkbox" id="selectAll">
+                                    </th>
+                                    <th>EJERCICIO</th>
+                                    <th>INSTRUMENTO</th>
+                                    <th>FECHA PAGO</th>
+                                    <th>DESCRIPCIÓN</th>
+                                    <th>SEC. EVENTO</th>
+                                    <th>FACTORES</th>
+                                    <th>ESTADO</th>
+                                    <th>ORIGEN</th>
+                                    <th>ACCIONES</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for calificacion in calificaciones %}
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="row-checkbox" data-id="{{ calificacion.id }}">
+                                    </td>
+                                    <td class="fw-bold">{{ calificacion.ejercicio }}</td>
+                                    <td>{{ calificacion.instrumento }}</td>
+                                    <td>{{ calificacion.fecha_pago|date:"Y-m-d" }}</td>
+                                    <td>{{ calificacion.descripcion|truncatewords:5 }}</td>
+                                    <td>{{ calificacion.secuencia_evento }}</td>
+                                    <td>
+                                        <span class="badge bg-info text-dark">
+                                            {{ calificacion.factores|length }} factores
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if calificacion.estado == 'completado' %}
+                                            <span class="badge bg-success">Completado</span>
+                                        {% elif calificacion.estado == 'pendiente' %}
+                                            <span class="badge bg-warning text-dark">Pendiente</span>
+                                        {% elif calificacion.estado == 'error' %}
+                                            <span class="badge bg-danger">Error</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ calificacion.estado|capfirst }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if calificacion.origen == 'sistema' %}
+                                            <i class="bi bi-cpu"></i> Sistema
+                                        {% elif calificacion.origen == 'manual' %}
+                                            <i class="bi bi-person"></i> Manual
+                                        {% else %}
+                                            <i class="bi bi-file-earmark-arrow-up"></i> Carga
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{% url 'detalle_calificacion' calificacion.id %}" 
+                                               class="btn btn-outline-primary btn-sm" 
+                                               title="Ver detalle">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="{% url 'editar_calificacion' calificacion.id %}" 
+                                               class="btn btn-outline-secondary btn-sm" 
+                                               title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <a href="{% url 'eliminar_calificacion' calificacion.id %}" 
+                                               class="btn btn-outline-danger btn-sm" 
+                                               title="Eliminar">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="10" class="text-center py-4">
+                                        <p class="text-muted mb-0">No hay calificaciones tributarias registradas</p>
+                                        <a href="{% url 'crear_calificacion' %}" class="btn btn-primary mt-2">
+                                            Crear Primera Calificación
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información adicional -->
+            <div class="mt-3">
+                <p class="text-muted">
+                    <i class="bi bi-info-circle"></i>
+                    Total de registros: <strong>{{ calificaciones.count }}</strong>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Script para habilitar/deshabilitar botones según selección
+    document.addEventListener('DOMContentLoaded', function() {
+        const checkboxes = document.querySelectorAll('.row-checkbox');
+        const selectAll = document.getElementById('selectAll');
+        const btnModificar = document.getElementById('btnModificar');
+        const btnEliminar = document.getElementById('btnEliminar');
+
+        function updateButtons() {
+            const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
+            const hasSelection = checkedBoxes.length > 0;
+            const singleSelection = checkedBoxes.length === 1;
+
+            btnModificar.disabled = !singleSelection;
+            btnEliminar.disabled = !hasSelection;
+
+            // Si hay una sola selección, agregar funcionalidad a los botones
+            if (singleSelection) {
+                const selectedId = checkedBoxes[0].dataset.id;
+                btnModificar.onclick = () => window.location.href = `/calificaciones/${selectedId}/editar/`;
+                btnEliminar.onclick = () => {
+                    if (confirm('¿Está seguro de eliminar esta calificación?')) {
+                        window.location.href = `/calificaciones/${selectedId}/eliminar/`;
+                    }
+                };
+            }
+        }
+
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', updateButtons);
+        });
+
+        selectAll.addEventListener('change', function() {
+            checkboxes.forEach(cb => {
+                cb.checked = this.checked;
+            });
+            updateButtons();
+        });
+
+        updateButtons();
+    });
+</script>
+{%endblock%}

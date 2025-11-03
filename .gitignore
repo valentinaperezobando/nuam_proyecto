@@ -3,6 +3,7 @@
 .venv
 .env/
 env/
+venv/
 
 # Archivos temporales
 __pycache__/

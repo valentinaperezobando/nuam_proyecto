@@ -1,13 +1,16 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
 from django.contrib.auth.models import User
 from app_nuam.models import *
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Q
+from utils.pandas import procesar_archivo
+from .forms import CalificacionForm, FiltroCalificacionesForm
 from decimal import Decimal
 from datetime import datetime
 import os, hashlib
-from utils.pandas import procesar_archivo
 import json
 
 # Create your views here.
@@ -171,30 +174,208 @@ def auditoria(request):
         return redirect('home')
     return render(request, 'auditoria.html')
 
-def calificaciones(request):
-    perfil = getattr(request.user, 'usuario', None)
-    if not perfil or perfil.rol != 'contador':
-        messages.warning(request, 'No tienes permisos para acceder a esta sección.')
+@login_required
+def listar_calificaciones(request):
+    # Verificar rol
+    if not hasattr(request.user, 'usuario') or request.user.usuario.rol != 'contador':
+        messages.warning(request, 'No tienes permisos para acceder a esta sección')
         return redirect('home')
-    return render(request, 'calificaciones.html')
+    
+    # Obtener todas las calificaciones
+    calificaciones = Calificacion.objects.all().select_related('creado_por')
+    
+    # Aplicar filtros
+    filtro_form = FiltroCalificacionesForm(request.GET)
+    if filtro_form.is_valid():
+        mercado = filtro_form.cleaned_data.get('mercado')
+        origen = filtro_form.cleaned_data.get('origen')
+        ejercicio = filtro_form.cleaned_data.get('ejercicio')
+        estado = filtro_form.cleaned_data.get('estado')
+        
+        if mercado:
+            calificaciones = calificaciones.filter(mercado=mercado)
+        if origen:
+            calificaciones = calificaciones.filter(origen=origen)
+        if ejercicio:
+            calificaciones = calificaciones.filter(ejercicio=ejercicio)
+        if estado:
+            calificaciones = calificaciones.filter(estado=estado)
+    
+    # Búsqueda por texto
+    search = request.GET.get('search', '')
+    if search:
+        calificaciones = calificaciones.filter(
+            Q(instrumento__icontains=search) |
+            Q(descripcion__icontains=search) |
+            Q(secuencia_evento__icontains=search)
+        )
+    
+    context = {
+        'calificaciones': calificaciones,
+        'filtro_form': filtro_form,
+        'search': search,
+    }
+    
+    return render(request, 'calificaciones/listar_calificaciones.html', context)
 
-def crear_calificacion(request):
-    perfil = getattr(request.user, 'usuario', None)
-    if not perfil or perfil.rol != 'contador':
-        messages.warning(request, 'No tienes permisos para acceder a esta sección.')
-        return redirect('home')
-    return render(request, 'crear_calificacion.html')
 
-def editar_calificacion(request):
-    perfil = getattr(request.user, 'usuario', None)
-    if not perfil or perfil.rol != 'contador':
-        messages.warning(request, 'No tienes permisos para acceder a esta sección.')
-        return redirect('home')
-    return render(request, 'editar_calificacion.html')
+class CrearCalificacionView(LoginRequiredMixin, View):
+    
+    def dispatch(self, request, *args, **kwargs):
+        # Verificar rol de contador
+        if not hasattr(request.user, 'usuario') or request.user.usuario.rol != 'contador':
+            messages.warning(request, 'No tienes permisos para acceder a esta sección')
+            return redirect('home')
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get(self, request):
+        form = CalificacionForm()
+        return render(request, 'calificaciones/crear_calificacion.html', {'form': form})
+    
+    def post(self, request):
+        form = CalificacionForm(request.POST)
+        
+        if form.is_valid():
+            calificacion = form.save(commit=False)
+            calificacion.creado_por = request.user
+            calificacion.origen = 'manual'
+            calificacion.estado = 'pendiente'
+            calificacion.save()
+            
+            # Crear entrada en historial
+            HistorialCalificacion.objects.create(
+                calificacion=calificacion,
+                usuario=request.user,
+                accion='creacion',
+                cambios={'tipo': 'creacion_manual'}
+            )
+            
+            messages.success(request, f'Calificación creada exitosamente. ID: {calificacion.id}')
+            return redirect('listar_calificaciones')
+        else:
+            messages.error(request, 'Error al crear la calificación. Por favor revisa los campos.')
+        
+        return render(request, 'calificaciones/crear_calificacion.html', {'form': form})
 
-def eliminar_calificacion(request):  
-    perfil = getattr(request.user, 'usuario', None)
-    if not perfil or perfil.rol != 'contador':
-        messages.warning(request, 'No tienes permisos para acceder a esta sección.')
+
+class EditarCalificacionView(LoginRequiredMixin, View):
+    def dispatch(self, request, *args, **kwargs):
+        if not hasattr(request.user, 'usuario') or request.user.usuario.rol != 'contador':
+            messages.warning(request, 'No tienes permisos para acceder a esta sección')
+            return redirect('home')
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get(self, request, pk):
+        calificacion = get_object_or_404(Calificacion, pk=pk)
+        form = CalificacionForm(instance=calificacion)
+        return render(request, 'calificaciones/editar_calificacion.html', {
+            'form': form,
+            'calificacion': calificacion
+        })
+    
+    def post(self, request, pk):
+        calificacion = get_object_or_404(Calificacion, pk=pk)
+        
+        # Guardar estado anterior para historial
+        datos_anteriores = calificacion.to_dict()
+        
+        form = CalificacionForm(request.POST, instance=calificacion)
+        
+        if form.is_valid():
+            calificacion_actualizada = form.save(commit=False)
+            calificacion_actualizada.save()
+            
+            # Crear entrada en historial
+            HistorialCalificacion.objects.create(
+                calificacion=calificacion_actualizada,
+                usuario=request.user,
+                accion='modificacion',
+                cambios={
+                    'anterior': datos_anteriores,
+                    'nuevo': calificacion_actualizada.to_dict()
+                }
+            )
+            
+            messages.success(request, 'Calificación actualizada exitosamente')
+            return redirect('listar_calificaciones')
+        else:
+            messages.error(request, 'Error al actualizar la calificación')
+        
+        return render(request, 'calificaciones/editar_calificacion.html', {
+            'form': form,
+            'calificacion': calificacion
+        })
+
+
+@login_required
+def eliminar_calificacion(request, pk):
+    # Verificar rol
+    if not hasattr(request.user, 'usuario') or request.user.usuario.rol != 'contador':
+        messages.warning(request, 'No tienes permisos para realizar esta acción')
         return redirect('home')
-    return render(request, 'eliminar_calificacion.html')
+    
+    calificacion = get_object_or_404(Calificacion, pk=pk)
+    
+    if request.method == 'POST':
+        # Guardar datos antes de eliminar para historial/bitácora
+        datos_eliminados = calificacion.to_dict()
+        
+        # Crear registro en Bitacora
+        from .models import Bitacora
+        Bitacora.objects.create(
+            entidad='Calificacion',
+            accion='eliminacion',
+            antes=datos_eliminados,
+            despues=None,
+            usuario=request.user
+        )
+        
+        calificacion.delete()
+        messages.success(request, 'Calificación eliminada exitosamente')
+        return redirect('listar_calificaciones')
+    
+    return render(request, 'calificaciones/confirmar_eliminar.html', {
+        'calificacion': calificacion
+    })
+
+
+@login_required
+def calcular_factores_calificacion(request, pk):
+    if not hasattr(request.user, 'usuario') or request.user.usuario.rol != 'contador':
+        messages.warning(request, 'No tienes permisos para realizar esta acción')
+        return redirect('home')
+    
+    calificacion = get_object_or_404(Calificacion, pk=pk)
+    
+    # Recalcular factores
+    calificacion.calcular_factores_automaticos()
+    calificacion.save()
+    
+    # Crear entrada en historial
+    HistorialCalificacion.objects.create(
+        calificacion=calificacion,
+        usuario=request.user,
+        accion='calculo',
+        cambios={'factores_calculados': calificacion.factores_calculados}
+    )
+    
+    messages.success(request, 'Factores recalculados exitosamente')
+    return redirect('editar_calificacion', pk=pk)
+
+
+@login_required
+def detalle_calificacion(request, pk):
+    if not hasattr(request.user, 'usuario') or request.user.usuario.rol != 'contador':
+        messages.warning(request, 'No tienes permisos para acceder a esta sección')
+        return redirect('home')
+    
+    calificacion = get_object_or_404(Calificacion, pk=pk)
+    historial = calificacion.historial.all()[:10]  # Últimas 10 modificaciones
+    
+    context = {
+        'calificacion': calificacion,
+        'historial': historial,
+    }
+    
+    return render(request, 'calificaciones/detalle_calificacion.html', context)
+
