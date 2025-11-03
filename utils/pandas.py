@@ -13,13 +13,13 @@ def procesar_archivo(archivo: Archivo):
             engine = 'openpyxl' if extension == '.xlsx' else 'xlrd'
             paginas_todas = pd.read_excel(ruta, sheet_name=None, engine=engine)
 
-            datos = {}
-            
+            datos = []
+        
             for sheet_name, df in paginas_todas.items():
                 df = df.replace({np.nan: None, np.inf: None, -np.inf: None})
                 for col in df.select_dtypes(include=['datetime64[ns]', 'datetime64[ns, UTC]']):
                     df[col] = df[col].dt.strftime('%d-%m-%Y')
-                datos[sheet_name] = df.to_dict(orient='records')
+                datos.extend(df.to_dict(orient='records'))
             
             payload = {'tipo': 'excel', 'datos': datos}
 
