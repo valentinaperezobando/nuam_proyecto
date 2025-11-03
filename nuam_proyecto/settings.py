@@ -82,11 +82,11 @@ WSGI_APPLICATION = 'nuam_proyecto.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': environ.get('POSTGRES_DB'),
-        'USER': environ.get('POSTGRES_USER'),
-        'PASSWORD': environ.get('POSTGRES_PASSWORD'),
-        'HOST': environ.get('DB_HOST'),
-        'PORT': environ.get('DB_PORT')
+        'NAME': environ.get('POSTGRES_DB', 'nuam_db'),
+        'USER': environ.get('POSTGRES_USER', 'nuam_user'),
+        'PASSWORD': environ.get('POSTGRES_PASSWORD', '1234'),
+        'HOST': environ.get('DB_HOST', 'localhost'),
+        'PORT': environ.get('DB_PORT', '5432'),
     }
 }
 

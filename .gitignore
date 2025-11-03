@@ -1,5 +1,12 @@
-.env
-.venv
+# Entornos virtuales
+env/
+venv/
+
+# Archivos temporales
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
 # Ignorar todos los archivos dentro de media/uploads/
 media/uploads/*
@@ -7,7 +14,11 @@ media/uploads/*
 # Pero mantener la carpeta
 !media/uploads/.gitkeep
 
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
+# Base de datos local
+*.sqlite3
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
