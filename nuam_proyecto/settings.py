@@ -136,8 +136,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-#donde estara la pag de login
-LOGIN_URL='/login/'
-#donde redirigir despues del login y logout
-LOGIN_REDIRECT_URL = '/'
+# para redireccionar despues del login
+LOGIN_REDIRECT_URL = '/post_login/'
 LOGOUT_REDIRECT_URL = '/login/'
+LOGIN_URL = '/login/'

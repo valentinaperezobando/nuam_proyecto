@@ -33,6 +33,21 @@ class RegistroView(View):
         user.save()
         messages.success(req, 'Usuario creado')
         return redirect('/')
+
+@login_required
+def redirigir_despues_login(request):
+    perfil = getattr(request.user, 'usuario', None) # obtener el perfil asociado al usuario
+    
+    if perfil and perfil.rol == 'admin':
+        return redirect('/administracion/')
+    elif perfil and perfil.rol == 'contador':
+        return redirect('/calificaciones/')
+    elif perfil and perfil.rol == 'analista':
+        return redirect('/carga_masiva/')
+    elif perfil and perfil.rol == 'auditor':
+        return redirect('/auditoria/')
+    else:
+        return redirect('/')
     
 @login_required
 def carga_masiva(request):
