@@ -4,18 +4,13 @@ from django.contrib.auth.models import User
 from app_nuam.models import *
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-<<<<<<< HEAD
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
-import os, hashlib
 from utils.pandas import procesar_archivo
 from .forms import CalificacionForm, FiltroCalificacionesForm
-=======
 from decimal import Decimal
 from datetime import datetime
 import os, hashlib
-from utils.pandas import procesar_archivo
->>>>>>> upstream/dev
 import json
 
 # Create your views here.
@@ -214,7 +209,6 @@ def listar_calificaciones(request):
     return render(request, 'calificaciones/listar_calificaciones.html', context)
 
 
-<<<<<<< HEAD
 class CrearCalificacionView(LoginRequiredMixin, View):
     
     def dispatch(self, request, *args, **kwargs):
@@ -252,10 +246,6 @@ class CrearCalificacionView(LoginRequiredMixin, View):
             messages.error(request, 'Error al crear la calificación. Por favor revisa los campos.')
         
         return render(request, 'calificaciones/crear_calificacion.html', {'form': form})
-=======
-def eliminar_calificacion(request):  
-    return render(request, 'eliminar_calificacion.html')
->>>>>>> upstream/dev
 
 
 class EditarCalificacionView(LoginRequiredMixin, View):
