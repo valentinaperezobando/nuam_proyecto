@@ -48,10 +48,9 @@ class LoteCarga(models.Model):
         pass
 
 class Archivo(models.Model):
-    archivo = models.FileField(upload_to='uploads/', null=False, default=False)
     nombre = models.CharField(max_length=100)
     tipo = models.CharField(max_length=30)
-    hash = models.CharField(max_length=200, unique=True)
+    hash = models.CharField(max_length=200)
     estado = models.CharField(max_length=50)
     lote_carga = models.ForeignKey(LoteCarga, on_delete=models.CASCADE)
 
@@ -62,74 +61,33 @@ class RegistroBruto(models.Model):
     archivo = models.ForeignKey(Archivo, on_delete=models.CASCADE)
 
 class Plantilla(models.Model):
-    mercado_choices = [
-        ('ACCIONES', 'acciones'), ('CFI', 'CFI'), ('FONDOS_MUTUOS', 'Fondos_Mutuos')
-    ]
-    origen_choices = [
-        ('CORREDORA', 'Corredora'), ('SISTEMA', 'Sistema')
-    ]
     nombre = models.CharField(max_length=100)
     version = models.CharField(max_length=20)
-    tipo_mercado = models.CharField(max_length=20, choices=mercado_choices)
-    origen_informacion = models. CharField(max_length=20, choices=origen_choices)
-    periodo_comercial = models.PositiveBigIntegerField()
     mappingJson = models.JSONField()
-    factoresJson = models.JSONField(default=dict)
-    descripcion = models.JSONField(null=True, blank=True)
-    activo = models.BooleanField(default=True)
-    fecha_creacion = models.DateTimeField(auto_now_add=True)
-    
-    def probar_plantilla(self, archivo):
-        registros_bruto = RegistroBruto.objects.filter(archivo=archivo)
-        resultados_preview = []
-        
-        for registro in registros_bruto:
-            data = registro.payloadJson
-            mapping = self.mappingJson
-            factores = self.factoresJson
-            
-            for fila in data:
-                normalizada = {}
-                for clave_destino, clave_origen in mapping.items():
-                    valor = fila.get(clave_origen)
-                    #transforma segun factores Json
-                    reglas = factores.get(clave_destino, {})
-                    if 'factor' in reglas and isinstance(valor, (int, float)):
-                        valor *= reglas['factor']
-                    if 'formato' in reglas:
-                        from datetime import datetime
-                        try:
-                            valor = datetime.strptime(valor, reglas["formato"]).strftime("%Y-%m-%d")
-                        except Exception:
-                            pass
-                    normalizada[clave_destino] = valor
-                resultados_preview.append(normalizada)
-        return resultados_preview
+
+    def probar_plantilla(self, registro_bruto):
+        # Lógica para probar la plantilla con un registro bruto
+        pass
     
 class RegistroNormalizado(models.Model):
-    plantilla = models.ForeignKey("Plantilla", on_delete=models.CASCADE)
-    archivo = models.ForeignKey("Archivo", on_delete=models.CASCADE, null=True, blank=True)
-    ejercicio = models.PositiveIntegerField(default=2025)
-    instrumento = models.CharField(max_length=100)
-    fecha_pago_dividendo = models.DateField()
-    descripcion_dividendo = models.TextField()
-    secuencia_evento = models.CharField(max_length=20)
-    acogido_isfut = models.CharField(max_length=10, null=True, blank=True)
-    origen = models.CharField(max_length=20)  # "CORREDORA" o "SISTEMA"
-    factor_actualizacion = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True)
-    factores = models.JSONField(null=True, blank=True)  # { "factor8": x, "factor9": y, ... }
+    fechaDoc = models.DateField(auto_now_add=True)
+    rutEmisor = models.CharField(max_length=12)
+    rutReceptor = models.CharField(max_length=12)
+    neto = models.DecimalField(max_digits=12, decimal_places=2)
+    iva = models.DecimalField(max_digits=12, decimal_places=2)
+    total = models.DecimalField(max_digits=12, decimal_places=2)
+    tipoDocumento = models.CharField(max_length=50)
+    plantilla = models.ForeignKey(Plantilla, on_delete=models.CASCADE)
 
-    def to_dict(self):
+    def doc_to_json(self):
         return {
-            "ejercicio": self.ejercicio,
-            "instrumento": self.instrumento,
-            "fecha_pago_dividendo": self.fecha_pago_dividendo.strftime("%d-%m-%Y"),
-            "descripcion_dividendo": self.descripcion_dividendo,
-            "secuencia_evento": self.secuencia_evento,
-            "acogido_isfut": self.acogido_isfut,
-            "origen": self.origen,
-            "factor_actualizacion": str(self.factor_actualizacion),
-            "factores": self.factores,
+            "fechaDoc": self.fechaDoc,
+            "rutEmisor": self.rutEmisor,
+            "rutReceptor": self.rutReceptor,
+            "neto": str(self.neto),
+            "iva": str(self.iva),
+            "total": str(self.total),
+            "tipoDocumento": self.tipoDocumento,
         }
     
 class Regla(models.Model):
