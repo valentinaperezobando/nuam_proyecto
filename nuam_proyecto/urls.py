@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from django.contrib.auth.views import LoginView, LogoutView
-from app_nuam.views import home, RegistroView, carga_masiva, auditoria, calificaciones, crear_calificacion, eliminar_calificacion, editar_calificacion  
+from app_nuam.views import home, RegistroView, carga_masiva, auditoria, calificaciones, crear_calificacion, eliminar_calificacion, editar_calificacion, normalizar_archivo, detalles_registro
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -32,7 +32,9 @@ urlpatterns = [
     path('calificaciones/', calificaciones, name='calificaciones'),
     path('crear_calificacion/', crear_calificacion, name='crear_calificacion'),
     path('eliminar_calificacion/', eliminar_calificacion, name='eliminar_calificacion'),
-    path('editar_calificacion/', editar_calificacion, name='editar_calificacion')
+    path('editar_calificacion/', editar_calificacion, name='editar_calificacion'),
+    path('carga_masiva/normalizar/<int:id>', normalizar_archivo, name='normalizar_archivo'),
+    path('carga_masiva/detalles_registro/<int:id>', detalles_registro, name='detalles_registro')
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

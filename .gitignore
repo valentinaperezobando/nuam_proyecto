@@ -6,3 +6,8 @@ media/uploads/*
 
 # Pero mantener la carpeta
 !media/uploads/.gitkeep
+
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
