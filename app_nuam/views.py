@@ -50,10 +50,16 @@ def redirigir_despues_login(request):
     elif perfil and perfil.rol == 'auditor':
         return redirect('/auditoria/')
     else:
+        messages.warning(request, 'Tu rol no tiene asignado un módulo de acceso.')
         return redirect('/')
     
 @login_required
 def carga_masiva(request):
+    perfil = getattr(request.user, 'usuario', None)
+    if not perfil or perfil.rol != 'analista':
+        messages.warning(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('home')
+    
     if request.method == 'POST':
         archivos_subidos = request.FILES.getlist('archivo')
         if not archivos_subidos:
@@ -159,16 +165,36 @@ def detalles_registro(request, id):
     return render(request, 'detalles_registro.html', {'normalizados': normalizados})
 
 def auditoria(request):
+    perfil = getattr(request.user, 'usuario', None)
+    if not perfil or perfil.rol != 'auditor':
+        messages.warning(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('home')
     return render(request, 'auditoria.html')
 
 def calificaciones(request):
+    perfil = getattr(request.user, 'usuario', None)
+    if not perfil or perfil.rol != 'contador':
+        messages.warning(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('home')
     return render(request, 'calificaciones.html')
 
 def crear_calificacion(request):
+    perfil = getattr(request.user, 'usuario', None)
+    if not perfil or perfil.rol != 'contador':
+        messages.warning(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('home')
     return render(request, 'crear_calificacion.html')
 
-def eliminar_calificacion(request):  
-    return render(request, 'eliminar_calificacion.html')
-
 def editar_calificacion(request):
+    perfil = getattr(request.user, 'usuario', None)
+    if not perfil or perfil.rol != 'contador':
+        messages.warning(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('home')
     return render(request, 'editar_calificacion.html')
+
+def eliminar_calificacion(request):  
+    perfil = getattr(request.user, 'usuario', None)
+    if not perfil or perfil.rol != 'contador':
+        messages.warning(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('home')
+    return render(request, 'eliminar_calificacion.html')
