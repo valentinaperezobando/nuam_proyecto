@@ -37,3 +37,88 @@
   body {
     background-color: #b8b076ff;
 }
+
+/* Estilos para calificaciones */
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.025);
+    cursor: pointer;
+}
+
+.badge {
+    font-weight: 500;
+    padding: 0.35em 0.65em;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #0a335c;
+    box-shadow: 0 0 0 0.25rem rgba(10, 51, 92, 0.25);
+}
+
+.btn-primary {
+    background-color: #0a335c;
+    border-color: #0a335c;
+}
+
+.btn-primary:hover {
+    background-color: #082849;
+    border-color: #082849;
+}
+
+.card {
+    border: none;
+    border-radius: 0.5rem;
+}
+
+.card-header {
+    border-radius: 0.5rem 0.5rem 0 0 !important;
+    font-weight: 600;
+}
+
+/* Estilos para factores */
+.form-control-sm {
+    font-size: 0.875rem;
+}
+
+/* Scrollbar personalizado para tablas */
+.table-responsive::-webkit-scrollbar {
+    height: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Animaciones */
+.card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.btn {
+    transition: all 0.2s;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .btn-group-sm .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+}

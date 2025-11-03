@@ -1,0 +1,280 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load calificacion_tags %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <!-- Encabezado -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold">
+                    <i class="bi bi-file-text"></i>
+                    Detalle de Calificación Tributaria
+                </h2>
+                <a href="{% url 'listar_calificaciones' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver al Listado
+                </a>
+            </div>
+
+            <!-- Información General -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Información General</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-5">ID:</dt>
+                                <dd class="col-sm-7">{{ calificacion.id }}</dd>
+
+                                <dt class="col-sm-5">Ejercicio:</dt>
+                                <dd class="col-sm-7"><strong>{{ calificacion.ejercicio }}</strong></dd>
+
+                                <dt class="col-sm-5">Mercado:</dt>
+                                <dd class="col-sm-7">{{ calificacion.mercado }}</dd>
+
+                                <dt class="col-sm-5">Instrumento:</dt>
+                                <dd class="col-sm-7">{{ calificacion.instrumento }}</dd>
+
+                                <dt class="col-sm-5">Fecha de Pago:</dt>
+                                <dd class="col-sm-7">{{ calificacion.fecha_pago|date:"d/m/Y" }}</dd>
+
+                                <dt class="col-sm-5">Secuencia Evento:</dt>
+                                <dd class="col-sm-7">{{ calificacion.secuencia_evento }}</dd>
+                            </dl>
+                        </div>
+
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-5">Estado:</dt>
+                                <dd class="col-sm-7">
+                                    {% if calificacion.estado == 'completado' %}
+                                        <span class="badge bg-success">Completado</span>
+                                    {% elif calificacion.estado == 'pendiente' %}
+                                        <span class="badge bg-warning text-dark">Pendiente</span>
+                                    {% elif calificacion.estado == 'error' %}
+                                        <span class="badge bg-danger">Error</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ calificacion.estado|capfirst }}</span>
+                                    {% endif %}
+                                </dd>
+
+                                <dt class="col-sm-5">Origen:</dt>
+                                <dd class="col-sm-7">{{ calificacion.get_origen_display }}</dd>
+
+                                <dt class="col-sm-5">Valor Histórico:</dt>
+                                <dd class="col-sm-7">${{ calificacion.valor_historico|floatformat:2 }}</dd>
+
+                                <dt class="col-sm-5">Dividendo:</dt>
+                                <dd class="col-sm-7">${{ calificacion.dividendo|floatformat:2 }}</dd>
+
+                                <dt class="col-sm-5">Creado por:</dt>
+                                <dd class="col-sm-7">{{ calificacion.creado_por.username }}</dd>
+
+                                <dt class="col-sm-5">Fecha Creación:</dt>
+                                <dd class="col-sm-7">{{ calificacion.fecha_creacion|date:"d/m/Y H:i" }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+
+                    {% if calificacion.descripcion %}
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2">Descripción:</h6>
+                            <p class="text-muted">{{ calificacion.descripcion }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if calificacion.evento_capital %}
+                    <div class="row">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2">Evento de Capital:</h6>
+                            <p class="text-muted">{{ calificacion.evento_capital }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if calificacion.observaciones %}
+                    <div class="row">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2">Observaciones:</h6>
+                            <p class="text-muted">{{ calificacion.observaciones }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Factores Tributarios -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-info text-dark">
+                    <h5 class="mb-0">Factores Tributarios</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Factor</th>
+                                    <th>Valor Ingresado</th>
+                                    <th>Valor Calculado</th>
+                                    <th>Diferencia</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for i in "12345678901234567890123456789012345678901234567890"|make_list %}
+                                    {% with num=forloop.counter|add:7 %}
+                                        {% if num <= 37 %}
+                                            {% with factor_key="factor_"|add:num|stringformat:"s" %}
+                                                <tr>
+                                                    <td><strong>Factor {{ num|stringformat:"02d" }}</strong></td>
+                                                    <td>
+                                                        {% if calificacion.factores|get_item:factor_key %}
+                                                            {{ calificacion.factores|get_item:factor_key }}
+                                                        {% else %}
+                                                            <span class="text-muted">0.00000000</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if calificacion.factores_calculados|get_item:factor_key %}
+                                                            <span class="text-primary">
+                                                                {{ calificacion.factores_calculados|get_item:factor_key }}
+                                                            </span>
+                                                        {% else %}
+                                                            <span class="text-muted">-</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if calificacion.factores|get_item:factor_key and calificacion.factores_calculados|get_item:factor_key %}
+                                                            {% widthratio calificacion.factores|get_item:factor_key 1 1 as valor_ing %}
+                                                            {% widthratio calificacion.factores_calculados|get_item:factor_key 1 1 as valor_calc %}
+                                                            <span class="text-muted small">
+                                                                {% if valor_ing == valor_calc %}
+                                                                    <i class="bi bi-check-circle text-success"></i> Coincide
+                                                                {% else %}
+                                                                    <i class="bi bi-exclamation-circle text-warning"></i> Difiere
+                                                                {% endif %}
+                                                            </span>
+                                                        {% else %}
+                                                            <span class="text-muted">-</span>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                            {% endwith %}
+                                        {% endif %}
+                                    {% endwith %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Errores de Validación -->
+            {% if calificacion.errores_validacion %}
+            <div class="card shadow mb-4 border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Errores y Advertencias de Validación
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        {% for error in calificacion.errores_validacion %}
+                        <li class="list-group-item">
+                            <strong>{{ error.tipo|default:"Error" }}:</strong> {{ error.mensaje }}
+                            {% if error.campo %}
+                                <span class="badge bg-secondary ms-2">{{ error.campo }}</span>
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Historial de Cambios -->
+            {% if historial %}
+            <div class="card shadow mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-clock-history"></i>
+                        Historial de Cambios (Últimos 10)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Usuario</th>
+                                    <th>Acción</th>
+                                    <th>Detalle</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in historial %}
+                                <tr>
+                                    <td>{{ item.fecha|date:"d/m/Y H:i" }}</td>
+                                    <td>{{ item.usuario.username }}</td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if item.accion == 'creacion' %}bg-success
+                                            {% elif item.accion == 'modificacion' %}bg-primary
+                                            {% elif item.accion == 'calculo' %}bg-info
+                                            {% else %}bg-secondary{% endif %}">
+                                            {{ item.accion|capfirst }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {% if item.cambios.tipo %}
+                                                {{ item.cambios.tipo }}
+                                            {% elif item.accion == 'modificacion' %}
+                                                Campos actualizados
+                                            {% elif item.accion == 'calculo' %}
+                                                Factores recalculados
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Acciones -->
+            <div class="card shadow">
+                <div class="card-body">
+                    <div class="d-flex gap-2 justify-content-between">
+                        <a href="{% url 'listar_calificaciones' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver
+                        </a>
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'calcular_factores' calificacion.id %}" class="btn btn-info">
+                                <i class="bi bi-calculator"></i> Recalcular Factores
+                            </a>
+                            <a href="{% url 'editar_calificacion' calificacion.id %}" class="btn btn-warning">
+                                <i class="bi bi-pencil"></i> Editar
+                            </a>
+                            <a href="{% url 'eliminar_calificacion' calificacion.id %}" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Eliminar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

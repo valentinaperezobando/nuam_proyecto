@@ -1,0 +1,240 @@
+{%extends 'base.html'%}
+{% load static %}
+{% load calificacion_tags %}
+
+{%block content%}
+    <div class="container py-4">
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-file-earmark-plus"></i>
+                        Formulario de Calificación Tributaria
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="formCalificacion">
+                        {% csrf_token %}
+
+                        <!-- Información Básica -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="border-bottom pb-2 mb-3">Información Básica</h5>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.mercado.id_for_label }}" class="form-label fw-bold">
+                                    Mercado <span class="text-danger">*</span>
+                                </label>
+                                {{ form.mercado }}
+                                {% if form.mercado.errors %}
+                                    <div class="text-danger small">{{ form.mercado.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.instrumento.id_for_label }}" class="form-label fw-bold">
+                                    Instrumento <span class="text-danger">*</span>
+                                </label>
+                                {{ form.instrumento }}
+                                {% if form.instrumento.errors %}
+                                    <div class="text-danger small">{{ form.instrumento.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-12 mb-3">
+                                <label for="{{ form.descripcion.id_for_label }}" class="form-label fw-bold">
+                                    Descripción <span class="text-danger">*</span>
+                                </label>
+                                {{ form.descripcion }}
+                                {% if form.descripcion.errors %}
+                                    <div class="text-danger small">{{ form.descripcion.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.fecha_pago.id_for_label }}" class="form-label fw-bold">
+                                    Fecha de Pago <span class="text-danger">*</span>
+                                </label>
+                                {{ form.fecha_pago }}
+                                {% if form.fecha_pago.errors %}
+                                    <div class="text-danger small">{{ form.fecha_pago.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.secuencia_evento.id_for_label }}" class="form-label fw-bold">
+                                    Secuencia de Evento <span class="text-danger">*</span>
+                                </label>
+                                {{ form.secuencia_evento }}
+                                {% if form.secuencia_evento.errors %}
+                                    <div class="text-danger small">{{ form.secuencia_evento.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.ejercicio.id_for_label }}" class="form-label fw-bold">
+                                    Año / Ejercicio <span class="text-danger">*</span>
+                                </label>
+                                {{ form.ejercicio }}
+                                {% if form.ejercicio.errors %}
+                                    <div class="text-danger small">{{ form.ejercicio.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.evento_capital.id_for_label }}" class="form-label fw-bold">
+                                    Evento de Capital
+                                </label>
+                                {{ form.evento_capital }}
+                                {% if form.evento_capital.errors %}
+                                    <div class="text-danger small">{{ form.evento_capital.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-3 mb-3">
+                                <label for="{{ form.valor_historico.id_for_label }}" class="form-label fw-bold">
+                                    Valor Histórico
+                                </label>
+                                {{ form.valor_historico }}
+                                {% if form.valor_historico.errors %}
+                                    <div class="text-danger small">{{ form.valor_historico.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-3 mb-3">
+                                <label for="{{ form.dividendo.id_for_label }}" class="form-label fw-bold">
+                                    Dividendo
+                                </label>
+                                {{ form.dividendo }}
+                                {% if form.dividendo.errors %}
+                                    <div class="text-danger small">{{ form.dividendo.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Factores Tributarios -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="border-bottom pb-2 mb-3">Factores Tributarios (Factor 08 - 37)</h5>
+                                <p class="text-muted small">
+                                    <i class="bi bi-info-circle"></i>
+                                    Ingrese los valores de los factores. Los valores vacíos se asumirán como 0.
+                                </p>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="row">
+                                    {% for i in "12345678901234567890123456789012345678901234567890"|make_list %}
+                                        {% with num=forloop.counter|add:7 %}
+                                            {% if num <= 37 %}
+                                                <div class="col-md-3 col-sm-6 mb-2">
+                                                    <label for="id_factor_{{ num }}" class="form-label small">
+                                                        Factor {{ num|stringformat:"02d" }}
+                                                    </label>
+                                                    <input type="number" 
+                                                           step="0.00000001" 
+                                                           class="form-control form-control-sm" 
+                                                           id="id_factor_{{ num }}" 
+                                                           name="factor_{{ num }}"
+                                                           placeholder="0.00">
+                                                </div>
+                                            {% endif %}
+                                        {% endwith %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Observaciones -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="border-bottom pb-2 mb-3">Información Adicional</h5>
+                            </div>
+
+                            <div class="col-12 mb-3">
+                                <label for="{{ form.observaciones.id_for_label }}" class="form-label fw-bold">
+                                    Observaciones
+                                </label>
+                                {{ form.observaciones }}
+                                {% if form.observaciones.errors %}
+                                    <div class="text-danger small">{{ form.observaciones.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Botones de acción -->
+                        <div class="row mt-4 pt-3 border-top">
+                            <div class="col-md-6 mb-2">
+                                <button type="button" class="btn btn-outline-primary w-100" id="btnCalcular">
+                                    <i class="bi bi-calculator"></i> Calcular Factores
+                                </button>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <div class="d-flex gap-2">
+                                    <a href="{% url 'listar_calificaciones' %}" class="btn btn-secondary flex-fill">
+                                        <i class="bi bi-x-circle"></i> Cancelar
+                                    </a>
+                                    <button type="submit" class="btn btn-primary flex-fill">
+                                        <i class="bi bi-save"></i> Guardar / Ingresar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const btnCalcular = document.getElementById('btnCalcular');
+        
+        btnCalcular.addEventListener('click', function() {
+            // Simular cálculo automático de factores
+            let factoresBase = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
+            let suma = 0;
+            
+            // Calcular suma de factores base
+            factoresBase.forEach(num => {
+                let input = document.getElementById(`id_factor_${num}`);
+                if (input && input.value) {
+                    suma += parseFloat(input.value) || 0;
+                }
+            });
+            
+            if (suma === 0) {
+                alert('Los factores base (8-19) están vacíos o son 0. No se puede calcular.');
+                return;
+            }
+            
+            // Calcular proporción para cada factor
+            for (let i = 8; i <= 37; i++) {
+                let input = document.getElementById(`id_factor_${i}`);
+                if (input && input.value) {
+                    let valor = parseFloat(input.value) || 0;
+                    let proporcion = (valor / suma).toFixed(8);
+                    console.log(`Factor ${i}: ${valor} / ${suma} = ${proporcion}`);
+                }
+            }
+            
+            alert('Cálculo realizado. Los factores se procesarán al guardar.');
+        });
+
+        // Validación del formulario
+        const form = document.getElementById('formCalificacion');
+        form.addEventListener('submit', function(e) {
+            const mercado = document.getElementById('{{ form.mercado.id_for_label }}');
+            const instrumento = document.getElementById('{{ form.instrumento.id_for_label }}');
+            
+            if (!mercado.value || !instrumento.value) {
+                e.preventDefault();
+                alert('Por favor complete los campos obligatorios (Mercado e Instrumento)');
+            }
+        });
+    });
+</script>
+{%endblock%}
