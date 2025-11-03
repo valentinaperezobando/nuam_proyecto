@@ -10,32 +10,63 @@
             <div class="col-md-2"></div>
             <div class="col-md-8">
                 <div id="dropzone" class="border border-2 border-dashed rounded-3 p-5 text-center bg-light">
-                <p class="mb-2 fw-semibold">Arrastra tu archivo aquí o haz clic para seleccionarlo</p>
-                <input
-                type="file"
-                name="archivo"
-                multiple
-                id="archivo"
-                accept=".pdf,.csv,.xls,.xlsx"
-                class="d-none"
-                />
-                <button type="button" id="btnSelect" class="btn btn-outline-primary">
-                Seleccionar archivo
-                </button>
-                <div id="file-list" class="mt-3 text-start"></div>
-            </div>
-                <div class="row">
-                    <div class="col-md-3 offset-md-9 text-end mt-2">
-                        <input type="submit" value="Grabar" class="btn btn-outline-success">                    
-                    </div>
+                    <p class="mb-2 fw-semibold">Arrastra tu archivo aquí o haz clic para seleccionarlo</p>
+                    <input
+                    type="file"
+                    name="archivo"
+                    multiple
+                    id="archivo"
+                    accept=".pdf,.csv,.xls,.xlsx"
+                    class="d-none"
+                    />
+                    <button type="button" id="btnSelect" class="btn btn-outline-primary">
+                    Seleccionar archivo
+                    </button>
+                    <div id="file-list" class="mt-3 text-start"></div>
                 </div>
-                </form>
-                <div class="btn btn-primary mt-2">Cancelar</div>
+            </div>
+            <div class="row">
+                <div class="col-md-3 offset-md-9 text-end mt-2">
+                    <input type="submit" value="Grabar" class="btn btn-outline-success">                    
+                </div>
             </div>
         </div>
+    </form>
+    <div class="btn btn-primary mt-2">Cancelar</div>
 
-        
+    {%if archivos%}
+
+    <table class="table">
+        <tr>
+            <th>Nombre archivo</th>
+            <th>Tipo</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+        </tr>
+        {%for archivo in archivos%}
+        <tr>
+            <th>{{archivo.nombre}}</th>
+            <th>{{archivo.tipo}}</th>
+            <th>{{archivo.estado}}</th>
+            {%if archivo.estado == 'NORMALIZADO'%}
+            <td>
+                <a href="/carga_masiva/detalles_registro/{{archivo.id}}" class="btn btn-primary btn-sm">Ver detalles</a>
+            </td>
+            {%else%}
+            <td>
+                <a href="" class="btn btn-primary btn-sm">Probar</a>
+                <a href="/carga_masiva/normalizar/{{archivo.id}}" class="btn btn-warning btn-sm btn-eliminar">Normalizar</a>
+            </td>
+            {%endif%}
+        </tr>
+
+        {%endfor%}
+    </table>
+
+    {%endif%}
 </div>
+
+
 
 <script>
 
