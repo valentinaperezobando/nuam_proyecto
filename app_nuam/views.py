@@ -102,7 +102,7 @@ def carga_masiva(request):
 
 def normalizar_archivo(request, id):
     archivo = Archivo.objects.get(id = id)
-    plantilla = Plantilla.objects.get(id = 2)
+    plantilla = Plantilla.objects.get(nombre = 'Plantilla generica dividendos' )
     registro_bruto = RegistroBruto.objects.get(archivo=archivo)
     
     mapping = plantilla.mappingJson
@@ -126,7 +126,7 @@ def normalizar_archivo(request, id):
                         try:
                             data_factores[clave] = datetime.strptime(valor, "%d-%m-%Y").date()
                         except ValueError:
-                            data_factores[clave] = valor  # mantener como string si nada funciona
+                            data_factores[clave] = valor
                     
                 print("Fila:", fila)
                 print("Mapping ejercicio:", mapping['ejercicio'])
