@@ -5,9 +5,11 @@ from app_nuam.views import (
     home, RegistroView, carga_masiva, auditoria, 
     listar_calificaciones, CrearCalificacionView, EditarCalificacionView,
     eliminar_calificacion, calcular_factores_calificacion, detalle_calificacion)
+from app_nuam.views import home, RegistroView, carga_masiva, auditoria, eliminar_calificacion, normalizar_archivo, detalles_registro
 from django.conf import settings
 from django.conf.urls.static import static
 from app_nuam import admin_views
+from app_nuam.views import redirigir_despues_login
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', home, name='home'),      
@@ -22,7 +24,10 @@ urlpatterns = [
     path('calificaciones/<int:pk>/eliminar/', eliminar_calificacion, name='eliminar_calificacion'),
     path('calificaciones/<int:pk>/calcular/', calcular_factores_calificacion, name='calcular_factores'),
     path('calificaciones/<int:pk>/', detalle_calificacion, name='detalle_calificacion'),
-    
+    path('carga_masiva/normalizar/<int:id>', normalizar_archivo, name='normalizar_archivo'),
+    path('carga_masiva/detalles_registro/<int:id>', detalles_registro, name='detalles_registro'),
+    path('post_login/', redirigir_despues_login, name='post_login'),
+    path('administracion/', admin_views.panel_admin, name='panel_admin'),
     path('administracion/usuarios/', admin_views.lista_usuarios, name='lista_usuarios'),
     path('administracion/bitacora/', admin_views.lista_bitacora, name='lista_bitacora'),
     path('administracion/notificaciones/',admin_views.lista_notificaciones),

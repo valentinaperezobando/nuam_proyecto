@@ -1,4 +1,7 @@
 # Entornos virtuales
+.env
+.venv
+.env/
 env/
 venv/
 
@@ -7,11 +10,6 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-
-# Configuración privada
-.env
-
-.venv
 
 # Ignorar todos los archivos dentro de media/uploads/
 media/uploads/*

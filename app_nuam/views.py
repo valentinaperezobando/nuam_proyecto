@@ -4,11 +4,18 @@ from django.contrib.auth.models import User
 from app_nuam.models import *
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+<<<<<<< HEAD
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
 import os, hashlib
 from utils.pandas import procesar_archivo
 from .forms import CalificacionForm, FiltroCalificacionesForm
+=======
+from decimal import Decimal
+from datetime import datetime
+import os, hashlib
+from utils.pandas import procesar_archivo
+>>>>>>> upstream/dev
 import json
 
 # Create your views here.
@@ -36,6 +43,21 @@ class RegistroView(View):
         user = User.objects.create_user(username=email, email=email, password=password)
         user.save()
         messages.success(req, 'Usuario creado')
+        return redirect('/')
+
+@login_required
+def redirigir_despues_login(request):
+    perfil = getattr(request.user, 'usuario', None) # obtener el perfil asociado al usuario
+    
+    if perfil and perfil.rol == 'admin':
+        return redirect('/administracion/')
+    elif perfil and perfil.rol == 'contador':
+        return redirect('/calificaciones/')
+    elif perfil and perfil.rol == 'analista':
+        return redirect('/carga_masiva/')
+    elif perfil and perfil.rol == 'auditor':
+        return redirect('/auditoria/')
+    else:
         return redirect('/')
     
 @login_required
@@ -78,10 +100,71 @@ def carga_masiva(request):
                 procesar_archivo(nuevo_archivo)
             except Exception as e:
                 messages.error(request, f'Error procesando {file.name}; {e}')
-            
+                
+        archivos = Archivo.objects.all()    
         messages.success(request, f"{len(archivos_subidos)} archivos cargados en el lote {lote_actual.id}")
-        return render(request, 'carga_masiva.html')
-    return render(request, 'carga_masiva.html') 
+        return render(request, 'carga_masiva.html',  {'archivos': archivos})
+    
+    archivos = Archivo.objects.all()    
+    return render(request, 'carga_masiva.html', {'archivos': archivos}) 
+
+def normalizar_archivo(request, id):
+    archivo = Archivo.objects.get(id = id)
+    plantilla = Plantilla.objects.get(nombre = 'Plantilla generica dividendos' )
+    registro_bruto = RegistroBruto.objects.get(archivo=archivo)
+    
+    mapping = plantilla.mappingJson
+    factores= plantilla.factoresJson
+    filas = registro_bruto.payloadJson.get("datos", [])
+    if isinstance(filas, str):
+        filas = json.loads(filas)
+    if isinstance(filas, dict):
+        filas = [filas]
+    registros_creados = 0
+        
+    for fila in filas:
+        try:
+            data_factores = {}
+            for clave, nombre_col in factores.items():
+                valor = fila.get(nombre_col)
+                if valor is not None:
+                    try:
+                        data_factores[clave] = float(valor)
+                    except ValueError:
+                        try:
+                            data_factores[clave] = datetime.strptime(valor, "%d-%m-%Y").date()
+                        except ValueError:
+                            data_factores[clave] = valor
+                    
+                print("Fila:", fila)
+                print("Mapping ejercicio:", mapping['ejercicio'])
+                print("Valor ejercicio:", fila.get(mapping['ejercicio']))
+        
+            RegistroNormalizado.objects.create(
+                plantilla = plantilla,
+                archivo = archivo,
+                ejercicio = int(fila.get(mapping['ejercicio'])),
+                instrumento = fila.get(mapping['instrumento']),
+                fecha_pago_dividendo=datetime.strptime(fila.get(mapping['fecha_pago_dividendo']), "%d-%m-%Y").date(),
+                descripcion_dividendo = fila.get(mapping['descripcion_dividendo']),
+                secuencia_evento = fila.get(mapping['secuencia_evento']),
+                acogido_isfut = fila.get(mapping['acogido_isfut']),
+                origen = fila.get(mapping['origen']),
+                factor_actualizacion = Decimal(fila.get(mapping['factor_actualizacion']) or 0),
+                factores = data_factores
+            )
+            registros_creados += 1
+            archivo.estado = "NORMALIZADO"
+            archivo.save()
+        except Exception as e:
+            messages.error(request, e )
+    messages.success(request, f'{registros_creados} registros normalizados exitosamente')
+    return redirect('carga_masiva')
+
+def detalles_registro(request, id):
+    archivo = Archivo.objects.get(id=id)
+    normalizados = RegistroNormalizado.objects.filter(archivo = archivo)
+    return render(request, 'detalles_registro.html', {'normalizados': normalizados})
 
 def auditoria(request):
     return render(request, 'auditoria.html')
@@ -131,6 +214,7 @@ def listar_calificaciones(request):
     return render(request, 'calificaciones/listar_calificaciones.html', context)
 
 
+<<<<<<< HEAD
 class CrearCalificacionView(LoginRequiredMixin, View):
     
     def dispatch(self, request, *args, **kwargs):
@@ -168,6 +252,10 @@ class CrearCalificacionView(LoginRequiredMixin, View):
             messages.error(request, 'Error al crear la calificación. Por favor revisa los campos.')
         
         return render(request, 'calificaciones/crear_calificacion.html', {'form': form})
+=======
+def eliminar_calificacion(request):  
+    return render(request, 'eliminar_calificacion.html')
+>>>>>>> upstream/dev
 
 
 class EditarCalificacionView(LoginRequiredMixin, View):

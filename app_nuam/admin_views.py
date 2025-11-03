@@ -27,3 +27,17 @@ def lista_bitacora(request):
 def lista_notificaciones(request):
     notificaciones = Notificacion.objects.all().order_by('-fecha') #ordenar por fecha descendente
     return render(request, 'admin/notificaciones.html', {'notificaciones': notificaciones})
+
+#
+@user_passes_test(es_admin)
+def panel_admin(request):
+    usuarios_count = UserProfile.objects.count()
+    bitacora = Bitacora.objects.all().order_by('-fecha')[:5]  # Últimos 5 registros
+    notificacion = Notificacion.objects.all().order_by('-fecha')[:5]  # Últimas 5 notificaciones
+
+    contexto = {
+        'usuarios_count': usuarios_count,
+        'bitacora': bitacora,
+        'notificacion': notificacion,
+    }
+    return render(request, 'admin/panel_admin.html',contexto)
