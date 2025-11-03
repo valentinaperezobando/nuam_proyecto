@@ -8,8 +8,11 @@ __pycache__/
 *.pyo
 *.pyd
 
-# Configuración privada
-.env
+# Ignorar todos los archivos dentro de media/uploads/
+media/uploads/*
+
+# Pero mantener la carpeta
+!media/uploads/.gitkeep
 
 # Base de datos local
 *.sqlite3

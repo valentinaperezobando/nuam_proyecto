@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h2 class="mt-4 mb-3 text-center">Panel de Administración</h2>
+
+<div class="row">
+  <div class="col-md-4">
+    <div class="card shadow-sm p-3">
+      <h5>Total de Usuarios</h5>
+      <p>{{ usuarios_count }}</p>
+    </div>
+  </div>
+
+  <div class="col-md-8">
+    <div class="card shadow-sm p-3">
+      <h5>Últimas Bitácoras</h5>
+      <ul>
+        {% for b in bitacora %}
+          <li>{{ b.fecha|date:"d/m/Y H:i" }} — {{ b.accion }} por {{ b.usuario.username }}</li>
+        {% empty %}
+          <li>No hay registros aún.</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="card shadow-sm p-3 mt-3">
+      <h5>Notificaciones Recientes</h5>
+      <ul>
+        {% for n in notificacion %}
+          <li>[{{ n.nivel|upper }}] {{ n.mensaje }} ({{ n.fecha|date:"d/m/Y H:i" }})</li>
+        {% empty %}
+          <li>No hay notificaciones recientes.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
