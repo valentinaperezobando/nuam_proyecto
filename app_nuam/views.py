@@ -125,6 +125,9 @@ def normalizar_archivo(request, id):
     mapping = plantilla.mappingJson
     factores= plantilla.factoresJson
     filas = registro_bruto.payloadJson.get("datos", [])
+    ok =True
+    errores = 0
+    
     if isinstance(filas, str):
         filas = json.loads(filas)
     if isinstance(filas, dict):
@@ -139,17 +142,14 @@ def normalizar_archivo(request, id):
                 if valor is not None:
                     try:
                         data_factores[clave] = float(valor)
-                    except ValueError:
+                    except (ValueError, TypeError):
                         try:
                             data_factores[clave] = datetime.strptime(valor, "%d-%m-%Y").date()
-                        except ValueError:
+                        except Exception:
                             data_factores[clave] = valor
-                    
-                print("Fila:", fila)
-                print("Mapping ejercicio:", mapping['ejercicio'])
-                print("Valor ejercicio:", fila.get(mapping['ejercicio']))
-        
-            RegistroNormalizado.objects.create(
+                
+            # crear registro normalizado
+            rn = RegistroNormalizado.objects.create(
                 plantilla = plantilla,
                 archivo = archivo,
                 ejercicio = int(fila.get(mapping['ejercicio'])),
@@ -157,17 +157,66 @@ def normalizar_archivo(request, id):
                 fecha_pago_dividendo=datetime.strptime(fila.get(mapping['fecha_pago_dividendo']), "%d-%m-%Y").date(),
                 descripcion_dividendo = fila.get(mapping['descripcion_dividendo']),
                 secuencia_evento = fila.get(mapping['secuencia_evento']),
-                acogido_isfut = fila.get(mapping['acogido_isfut']),
-                origen = fila.get(mapping['origen']),
-                factor_actualizacion = Decimal(fila.get(mapping['factor_actualizacion']) or 0),
+                acogido_isfut = fila.get(mapping.get('acogido_isfut')) if mapping.get('acogido_isfut') else fila.get('acogido_isfut'),
+                origen = fila.get(mapping.get('origen') or 'carga_masiva'),
+                factor_actualizacion = Decimal(fila.get(mapping.get('factor_actualizacion')) or 0),
                 factores = data_factores
             )
             registros_creados += 1
+
+            # Crear Calificacion asociada a este RegistroNormalizado
+            # Mapear factores del registro normalizado a la estructura esperada por Calificacion
+            cal_factores = {}
+            rn_factores = rn.factores or {}
+            for i in range(8, 38):
+                # posibles claves en registro: 'factor_8', 'factor8', '8'
+                keys_to_try = [f'factor_{i}', f'factor{i}', str(i), f'F{i}', f'factor_{i:02d}', f'factor{i:02d}']
+                value = 0
+                for k in keys_to_try:
+                    if k in rn_factores and rn_factores.get(k) is not None:
+                        try:
+                            value = float(rn_factores.get(k))
+                        except (ValueError, TypeError):
+                            value = 0
+                        break
+                cal_factores[f'factor_{i}'] = round(float(value or 0), 8)
+
+            # determinar usuario creador (si no hay, usar primer superuser para no violar FK)
+            creador = request.user if request.user.is_authenticated else (User.objects.filter(is_superuser=True).first() or User.objects.first())
+
+            cal = Calificacion.objects.create(
+                ejercicio = rn.ejercicio,
+                mercado = getattr(rn, 'mercado', 'AC') if hasattr(rn,'mercado') else 'AC',
+                instrumento = rn.instrumento,
+                descripcion = rn.descripcion_dividendo,
+                fecha_pago = rn.fecha_pago_dividendo,
+                secuencia_evento = rn.secuencia_evento,
+                evento_capital = '',
+                valor_historico = Decimal('0.00'),
+                dividendo = Decimal('0.00'),
+                factores = cal_factores,
+                factores_calculados = {}, 
+                estado = 'pendiente',
+                origen = 'carga_masiva',
+                creado_por = creador,
+                registro_normalizado = rn,
+                lote_carga = archivo.lote_carga,
+                observaciones = ''
+            )
+
+            # crear historial mínimo
+            HistorialCalificacion.objects.create(
+                calificacion=cal,
+                usuario=creador,
+                accion='creacion',
+                cambios={'via': 'carga_masiva', 'registro_normalizado_id': rn.id}
+            )
+
             archivo.estado = "NORMALIZADO"
             archivo.save()
             
         except Exception as e:
-            messages.error(request, f'Error al normalizar archivo {archivo.nombre},. No hay correspondencia con datos tributarios' )
+            ok = False
             notificacion = Notificacion.objects.create(
                 usuario = request.user,
                 tipo = 'ERROR',
@@ -175,7 +224,11 @@ def normalizar_archivo(request, id):
                 nivel = 'ERROR'
             )
             notificacion.save()
-    messages.success(request, f'{registros_creados} registros normalizados exitosamente')
+            errores+=1
+    if ok == False:
+        messages.error(request, f'Error al normalizar {errores} registros en {archivo.nombre}. No hay correspondencia con datos tributarios' )
+    else:
+        messages.success(request, f'{registros_creados} registros normalizados exitosamente')
     return redirect('carga_masiva')
 
 def detalles_registro(request, id):
@@ -293,23 +346,49 @@ class EditarCalificacionView(LoginRequiredMixin, View):
     def get(self, request, pk):
         calificacion = get_object_or_404(Calificacion, pk=pk)
         form = CalificacionForm(instance=calificacion)
+        # pasar estados a la plantilla para renderizar select
         return render(request, 'calificaciones/editar_calificacion.html', {
             'form': form,
-            'calificacion': calificacion
+            'calificacion': calificacion,
+            'estados': Calificacion.ESTADOS
         })
     
     def post(self, request, pk):
         calificacion = get_object_or_404(Calificacion, pk=pk)
         
         # Guardar estado anterior para historial
-        datos_anteriores = calificacion.to_dict()
+        datos_anteriores = getattr(calificacion, 'to_dict', lambda: None)()
         
         form = CalificacionForm(request.POST, instance=calificacion)
         
         if form.is_valid():
             calificacion_actualizada = form.save(commit=False)
+
+            # Validar y asignar nuevo estado conservando el tipo original de la choice
+            nuevo_estado_raw = request.POST.get('estado')
+            nuevo_estado_assignado = None
+            if nuevo_estado_raw is not None:
+                # Buscar la key original en Calificacion.ESTADOS (respetando tipos)
+                for key, label in getattr(Calificacion, 'ESTADOS', []):
+                    try:
+                        # comparar por string para evitar problemas de tipo
+                        if str(key) == str(nuevo_estado_raw):
+                            nuevo_estado_assignado = key
+                            break
+                    except Exception:
+                        continue
+
+            if nuevo_estado_assignado is not None:
+                calificacion_actualizada.estado = nuevo_estado_assignado
+
+            # Guardar cambios (primera pasada)
             calificacion_actualizada.save()
-            
+
+            # Forzar persistencia del estado tal como el usuario lo pidió (evita sobreescrituras posteriores)
+            if nuevo_estado_assignado is not None:
+                # actualizamos directamente en la BD con el valor original (tipo correcto)
+                Calificacion.objects.filter(pk=calificacion_actualizada.pk).update(estado=nuevo_estado_assignado)
+
             # Crear entrada en historial
             HistorialCalificacion.objects.create(
                 calificacion=calificacion_actualizada,
@@ -317,7 +396,7 @@ class EditarCalificacionView(LoginRequiredMixin, View):
                 accion='modificacion',
                 cambios={
                     'anterior': datos_anteriores,
-                    'nuevo': calificacion_actualizada.to_dict()
+                    'nuevo': getattr(calificacion_actualizada, 'to_dict', lambda: None)()
                 }
             )
             
@@ -328,7 +407,8 @@ class EditarCalificacionView(LoginRequiredMixin, View):
         
         return render(request, 'calificaciones/editar_calificacion.html', {
             'form': form,
-            'calificacion': calificacion
+            'calificacion': calificacion,
+            'estados': Calificacion.ESTADOS
         })
 
 

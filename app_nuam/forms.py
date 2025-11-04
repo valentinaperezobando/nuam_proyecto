@@ -38,7 +38,7 @@ class CalificacionForm(forms.ModelForm):
             }),
             'secuencia_evento': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'ej., SEQ001'
+                'placeholder': 'ej., 100100'
             }),
             'evento_capital': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -68,8 +68,9 @@ class CalificacionForm(forms.ModelForm):
         self.fields['mercado'].widget = forms.Select(
             choices=[
                 ('', 'Seleccione un mercado'),
-                ('AC', 'Acciones Cerradas'),
-                ('AA', 'Acciones Abiertas'),
+                ('ACCIONES', 'Acciones'), 
+                ('CFI', 'CFI'), 
+                ('FONDOS_MUTUOS', 'Fondos mutuos')
             ],
             attrs={'class': 'form-control'}
         )
@@ -130,8 +131,9 @@ class FiltroCalificacionesForm(forms.Form):
     mercado = forms.ChoiceField(
         required=False,
         choices=[('', 'Todos')] + [
-            ('AC', 'Acciones Cerradas'),
-            ('AA', 'Acciones Abiertas'),
+            ('ACCIONES', 'Acciones'), 
+            ('CFI', 'CFI'), 
+            ('FONDOS_MUTUOS', 'Fondos mutuos')
         ],
         widget=forms.Select(attrs={'class': 'form-select form-select-sm'})
     )
