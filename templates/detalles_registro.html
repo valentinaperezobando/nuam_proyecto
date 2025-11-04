@@ -2,36 +2,35 @@
 
 {%block content%}
     {%if normalizados%}
-    <div>
-
+    <div class="py-4">
+        <table class="table">
+            <tr>
+                <th>Ejercicio</th>
+                <th>Instrumento</th>
+                <th>Fecha pago dividendo</th>
+                <th>Descripción dividendo</th>
+                <th>Secuencia evento</th>
+                <th>Acogido Isfut</th>
+                <th>Origen</th>
+                <th>Factor Actualización</th>
+                <th>Factores</th>
+            </tr>
+            {%for norm in normalizados%}
+            <tr>
+                <th>{{norm.ejercicio}}</th>
+                <th>{{norm.instrumento}}</th>
+                <th>{{norm.fecha_pago_dividendo}}</th>
+                <th>{{norm.descripcion_dividendo}}</th>
+                <th>{{norm.secuencia_evento}}</th>
+                <th>{{norm.acogido_isfut}}</th>   
+                <th>{{norm.origen}}</th>
+                <th>{{norm.factor_actualizacion}}</th>
+                <th>{{norm.factores}}</th>
+            {%endfor%}
+            </tr>
+        </table>
+        {%endif%}
+        <a href="/carga_masiva/" class="btn btn-primary btn-sm">Volver</a>
     </div>
-    <table class="table">
-        <tr>
-            <th>Ejercicio</th>
-            <th>Instrumento</th>
-            <th>Fecha pago dividendo</th>
-            <th>Descripción dividendo</th>
-            <th>Secuencia evento</th>
-            <th>Acogido Isfut</th>
-            <th>Origen</th>
-            <th>Factor Actualización</th>
-            <th>Factores</th>
-        </tr>
-        {%for norm in normalizados%}
-        <tr>
-            <th>{{norm.ejercicio}}</th>
-            <th>{{norm.instrumento}}</th>
-            <th>{{norm.fecha_pago_dividendo}}</th>
-            <th>{{norm.descripcion_dividendo}}</th>
-            <th>{{norm.secuencia_evento}}</th>
-            <th>{{norm.acogido_isfut}}</th>   
-            <th>{{norm.origen}}</th>
-            <th>{{norm.factor_actualizacion}}</th>
-            <th>{{norm.factores}}</th>
-        {%endfor%}
-        </tr>
-    </table>
-    {%endif%}
-    <a href="/carga_masiva/" class="btn btn-primary btn-sm">Volver</a>
 
 {%endblock%}  
