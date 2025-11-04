@@ -220,7 +220,7 @@ def normalizar_archivo(request, id):
             notificacion = Notificacion.objects.create(
                 usuario = request.user,
                 tipo = 'ERROR',
-                mensaje = f'Error al normalizar el archivo {archivo.nombre}, no hay correspondencia de datos tributarios',
+                mensaje = f'Error al normalizar el archivo {archivo.nombre}, {e}',
                 nivel = 'ERROR'
             )
             notificacion.save()
