@@ -4,34 +4,121 @@
 <h2 class="mt-4 mb-3 text-center">Panel de Administración</h2>
 
 <div class="row">
+  <!-- Estadísticas -->
   <div class="col-md-4">
-    <div class="card shadow-sm p-3">
+    <div class="card shadow-sm p-3 text-center">
       <h5>Total de Usuarios</h5>
-      <p>{{ usuarios_count }}</p>
+      <p class="fs-4 fw-bold">{{ usuarios_count }}</p>
+
+      <!-- Botón para abrir modal de roles -->
+      <button class="btn btn-outline-dark mt-2" data-bs-toggle="modal" data-bs-target="#modalRoles">
+        <i class="fa-solid fa-user-gear me-1"></i> Gestionar Roles
+      </button>
     </div>
   </div>
 
+  <!-- Bitácoras y Notificaciones -->
   <div class="col-md-8">
-    <div class="card shadow-sm p-3">
+    <div class="card shadow-sm p-3 mb-3">
       <h5>Últimas Bitácoras</h5>
-      <ul>
+      <ul class="list-group list-group-flush">
         {% for b in bitacora %}
-          <li>{{ b.fecha|date:"d/m/Y H:i" }} — {{ b.accion }} por {{ b.usuario.username }}</li>
+          <li class="list-group-item">
+            <i class="fa-regular fa-clock text-muted"></i>
+            {{ b.fecha|date:"d/m/Y H:i" }} —
+            <strong>{{ b.accion }}</strong> por
+            <span class="text-secondary">{{ b.usuario.username }}</span>
+          </li>
         {% empty %}
-          <li>No hay registros aún.</li>
+          <li class="list-group-item text-muted">No hay registros aún.</li>
         {% endfor %}
       </ul>
     </div>
 
-    <div class="card shadow-sm p-3 mt-3">
+    <div class="card shadow-sm p-3">
       <h5>Notificaciones Recientes</h5>
-      <ul>
+      <ul class="list-group list-group-flush">
         {% for n in notificacion %}
-          <li>[{{ n.nivel|upper }}] {{ n.mensaje }} ({{ n.fecha|date:"d/m/Y H:i" }})</li>
+          <li class="list-group-item">
+            <span class="badge bg-{{ n.nivel }}">{{ n.nivel|upper }}</span>
+            {{ n.mensaje }}
+            <small class="text-muted">({{ n.fecha|date:"d/m/Y H:i" }})</small>
+          </li>
         {% empty %}
-          <li>No hay notificaciones recientes.</li>
+          <li class="list-group-item text-muted">No hay notificaciones recientes.</li>
         {% endfor %}
       </ul>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+{% if messages %}
+  <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080">
+    {% for message in messages %}
+      <div class="toast align-items-center text-bg-success border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+          <div class="toast-body">
+            <i class="fa-solid fa-circle-check me-2"></i>{{ message }}
+          </div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<!-- MODAL GESTIÓN DE ROLES -->
+<div class="modal fade" id="modalRoles" tabindex="-1" aria-labelledby="modalRolesLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title" id="modalRolesLabel">
+          <i class="fa-solid fa-users-gear me-2"></i> Gestión de Roles de Usuario
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="table-responsive">
+          <table class="table table-striped text-center align-middle">
+            <thead class="table-dark">
+              <tr>
+                <th>Usuario</th>
+                <th>Rol Actual</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for u in usuarios %}
+              <tr>
+                <td>{{ u.user.username }}</td>
+                <td>{{ u.rol|title }}</td>
+                <td>
+                  <form method="POST" action="{% url 'lista_usuarios' %}" class="d-flex align-items-center justify-content-center gap-2">
+                    {% csrf_token %}
+                    <input type="hidden" name="user_id" value="{{ u.id }}">
+                    <select name="rol" class="form-select form-select-sm w-auto">
+                      <option value="admin" {% if u.rol == "admin" %}selected{% endif %}>Administrador</option>
+                      <option value="contador" {% if u.rol == "contador" %}selected{% endif %}>Contador</option>
+                      <option value="analista" {% if u.rol == "analista" %}selected{% endif %}>Analista</option>
+                      <option value="auditor" {% if u.rol == "auditor" %}selected{% endif %}>Auditor</option>
+                    </select>
+                    <button type="submit" class="btn btn-sm btn-primary d-flex align-items-center justify-content-center" title="Guardar cambios">
+                      <i class="fa-solid fa-floppy-disk"></i>
+                    </button>
+                  </form>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="4" class="text-muted">No hay usuarios registrados.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 </div>
