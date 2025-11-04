@@ -102,6 +102,14 @@ def carga_masiva(request):
             except Exception as e:
                 messages.error(request, f'Error procesando {file.name}; {e}')
                 
+                notificacion = Notificacion.objects.create(
+                    usuario = request.user,
+                    tipo = 'ERROR',
+                    mensaje = f'Error al procesar el archivo {file.name}',
+                    nivel = 'medio'
+                )
+                notificacion.save()
+            
         archivos = Archivo.objects.all()    
         messages.success(request, f"{len(archivos_subidos)} archivos cargados en el lote {lote_actual.id}")
         return render(request, 'carga_masiva.html',  {'archivos': archivos})
@@ -157,8 +165,16 @@ def normalizar_archivo(request, id):
             registros_creados += 1
             archivo.estado = "NORMALIZADO"
             archivo.save()
+            
         except Exception as e:
-            messages.error(request, e )
+            messages.error(request, f'Error al normalizar archivo {archivo.nombre},. No hay correspondencia con datos tributarios' )
+            notificacion = Notificacion.objects.create(
+                usuario = request.user,
+                tipo = 'ERROR',
+                mensaje = f'Error al normalizar el archivo {archivo.nombre}, no hay correspondencia de datos tributarios',
+                nivel = 'ERROR'
+            )
+            notificacion.save()
     messages.success(request, f'{registros_creados} registros normalizados exitosamente')
     return redirect('carga_masiva')
 
@@ -166,6 +182,15 @@ def detalles_registro(request, id):
     archivo = Archivo.objects.get(id=id)
     normalizados = RegistroNormalizado.objects.filter(archivo = archivo)
     return render(request, 'detalles_registro.html', {'normalizados': normalizados})
+
+def eliminar_archivo(request, id):
+    try: 
+        archivo = Archivo.objects.get(id=id)
+        archivo.delete()
+        messages.success(request, 'Archivo eliminado correctamente.')
+        return redirect('/carga_masiva/')
+    except Exception as e:
+        messages.error(request, f"Error al eliminar el archivo: {str(e)}")
 
 def auditoria(request):
     perfil = getattr(request.user, 'usuario', None)
