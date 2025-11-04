@@ -34,7 +34,7 @@
                     <form method="post">
                         {% csrf_token %}
 
-                        <!-- Información Básica -->
+                        <!-- Información Básica (se muestran en input pero pueden permanecer editables si el form lo permite) -->
                         <div class="row mb-4">
                             <div class="col-12">
                                 <h5 class="border-bottom pb-2 mb-3">Información Básica</h5>
@@ -122,6 +122,16 @@
                             </div>
                         </div>
 
+                        <!-- Estado editable -->
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">Estado</label>
+                            <select name="estado" class="form-select">
+                                {% for val,label in estados %}
+                                    <option value="{{ val }}" {% if calificacion.estado == val %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
                         <!-- Factores Tributarios -->
                         <div class="row mb-4">
                             <div class="col-12">
@@ -174,31 +184,6 @@
                                     Observaciones
                                 </label>
                                 {{ form.observaciones }}
-                            </div>
-                        </div>
-
-                        <!-- Información de auditoría -->
-                        <div class="row mb-3">
-                            <div class="col-12">
-                                <div class="alert alert-info">
-                                    <small>
-                                        <strong>Creado por:</strong> {{ calificacion.creado_por.username }} 
-                                        el {{ calificacion.fecha_creacion|date:"d/m/Y H:i" }}
-                                        <br>
-                                        <strong>Última modificación:</strong> {{ calificacion.fecha_modificacion|date:"d/m/Y H:i" }}
-                                        <br>
-                                        <strong>Origen:</strong> {{ calificacion.get_origen_display }}
-                                        <br>
-                                        <strong>Estado:</strong> 
-                                        <span class="badge 
-                                            {% if calificacion.estado == 'completado' %}bg-success
-                                            {% elif calificacion.estado == 'pendiente' %}bg-warning
-                                            {% elif calificacion.estado == 'error' %}bg-danger
-                                            {% else %}bg-secondary{% endif %}">
-                                            {{ calificacion.get_estado_display }}
-                                        </span>
-                                    </small>
-                                </div>
                             </div>
                         </div>
 

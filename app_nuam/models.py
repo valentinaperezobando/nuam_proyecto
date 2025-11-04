@@ -66,7 +66,10 @@ class Plantilla(models.Model):
         ('ACCIONES', 'acciones'), ('CFI', 'CFI'), ('FONDOS_MUTUOS', 'Fondos_Mutuos')
     ]
     origen_choices = [
-        ('CORREDORA', 'Corredora'), ('SISTEMA', 'Sistema')
+        # ('CORREDORA', 'Corredora'), ('SISTEMA', 'Sistema')
+        ('manual', 'Manual'),
+        ('sistema', 'Sistema'),
+        ('carga_masiva', 'Carga Masiva'),
     ]
     nombre = models.CharField(max_length=100)
     version = models.CharField(max_length=20)
@@ -172,6 +175,7 @@ class Calificacion(models.Model):
     mercado = models.CharField(max_length=50, verbose_name="Mercado", default="AC")
     instrumento = models.CharField(max_length=100, verbose_name="Instrumento")
     descripcion = models.TextField(blank=True, verbose_name="Descripción")
+    # acogido_isfut = models.CharField(max_length=10, null=True, blank=True)
     
     # Fechas y eventos
     fecha_pago = models.DateField(verbose_name="Fecha de Pago", default=None)
