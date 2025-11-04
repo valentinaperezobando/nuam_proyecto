@@ -8,7 +8,7 @@ from .models import UserProfile, Bitacora, Notificacion
 # usuario admin puede entrar
 def es_admin(user):
     # Verifica si el usuario tiene rol de admin
-    return hasattr(user, 'usuario') and user.usuario.rol == 'admin'
+    return hasattr(user, 'usuario') and user.usuario.rol == 'auditor'
 
 # pag lista de usuario
 @user_passes_test(es_admin) #funcion tipi tag para cambiar la vista q le corresponde al admin

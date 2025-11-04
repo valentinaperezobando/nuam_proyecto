@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  /* Layout general */
+  .filtros .form-control, .filtros .form-select {
+    font-size: .9rem;
+  }
+  .filtros button {
+    margin-top: 0.2rem;
+  }
+  .chart-card {
+    border: 0;
+    border-radius: 1rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+    background: #fff;
+  }
+  .chart-title {
+    font-weight: 600;
+    color: #495057;
+  }
+  .chart-wrap {
+    position: relative;
+    height: 280px;
+  }
+  .table-container {
+    border-radius: 1rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+    background: #fff;
+    overflow: hidden;
+  }
+</style>
+
+<h2 class="mb-3"> Auditoría · Archivos</h2>
+
+<form class="row g-2 filtros mb-3">
+  <div class="col-md-2"><input name="q" class="form-control" placeholder="Nombre o hash" value="{{ filtros.q }}"></div>
+  <div class="col-md-2"><input name="desde" type="date" class="form-control" value="{{ filtros.desde }}"></div>
+  <div class="col-md-2"><input name="hasta" type="date" class="form-control" value="{{ filtros.hasta }}"></div>
+  <div class="col-md-2"><input name="lote" class="form-control" placeholder="ID lote" value="{{ filtros.lote }}"></div>
+  <div class="col-md-2"><input name="tipo" class="form-control" placeholder="csv/xlsx/pdf" value="{{ filtros.tipo }}"></div>
+  <div class="col-md-2"><input name="estado" class="form-control" placeholder="Estado (ej. Procesado)" value="{{ filtros.estado }}"></div>
+  <div class="col-12 text-end">
+    <button class="btn btn-primary btn-sm px-4">Filtrar</button>
+  </div>
+
+</form>
+
+<div class="row g-4 mb-3">
+  <div class="col-md-6">
+    <div class="card chart-card p-3">
+      <div class="chart-title mb-2">Archivos por estado</div>
+      <div class="chart-wrap"><canvas id="chartEstado"></canvas></div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card chart-card p-3">
+      <div class="chart-title mb-2">Archivos por tipo</div>
+      <div class="chart-wrap"><canvas id="chartTipo"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<div class="text-end mb-2">
+  <a href="{% url 'auditoria_archivos' %}?export=1{% if filtros.q %}&q={{ filtros.q }}{% endif %}{% if filtros.tipo %}&tipo={{ filtros.tipo }}{% endif %}{% if filtros.estado %}&estado={{ filtros.estado }}{% endif %}"
+     class="btn btn-success btn-sm px-4">
+    <i class="bi bi-download"></i> Exportar reporte CSV
+  </a>
+</div>
+
+<div class="table-container mt-3 p-3">
+  <h6 class="mb-3">Listado de archivos</h6>
+  <div class="table-responsive">
+    <table class="table table-sm table-hover align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>ID</th><th>Nombre</th><th>Tipo</th><th>Estado</th><th>Lote</th><th>Fecha lote</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in page %}
+        <tr>
+          <td>{{ a.id }}</td>
+          <td>{{ a.nombre }}</td>
+          <td>{{ a.tipo }}</td>
+          <td>{{ a.estado }}</td>
+          <td>{{ a.lote_carga.id }}</td>
+          <td>{{ a.lote_carga.fecha_creacion|date:"d M Y, H:i" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center text-muted py-3">Sin resultados</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mt-2">
+    <nav>
+      <ul class="pagination pagination-sm mb-0">
+        {% if page.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page={{ page.previous_page_number }}">«</a></li>
+        {% endif %}
+        <li class="page-item disabled"><span class="page-link">Página {{ page.number }} de {{ page.paginator.num_pages }}</span></li>
+        {% if page.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ page.next_page_number }}">»</a></li>
+        {% endif %}
+      </ul>
+    </nav>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const porEstado = {{ chart_por_estado|safe }};
+const porTipo   = {{ chart_por_tipo|safe }};
+
+const palette = ['#0d6efd','#6f42c1','#20c997','#ffc107','#dc3545','#198754','#0dcaf0'];
+
+new Chart(document.getElementById('chartEstado'), {
+  type: 'pie',
+  data: { labels: porEstado.labels, datasets: [{ data: porEstado.values, backgroundColor: palette }] },
+  options: { plugins: { legend: { position: 'bottom' } }, responsive: true, maintainAspectRatio: false }
+});
+
+new Chart(document.getElementById('chartTipo'), {
+  type: 'doughnut',
+  data: { labels: porTipo.labels, datasets: [{ data: porTipo.values, backgroundColor: palette }] },
+  options: { cutout: '55%', plugins: { legend: { position: 'bottom' } }, responsive: true, maintainAspectRatio: false }
+});
+</script>
+
+{% endblock %}
+

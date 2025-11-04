@@ -1,6 +1,7 @@
 # sirve para configurar el panel de amdin de django (http://127.0.0.1:8000/admin/)
 from django.contrib import admin
 from .models import UserProfile, RegistroBruto, Calificacion, HistorialCalificacion
+from django.contrib import messages
 
 # Register your models here.
 @admin.register(UserProfile)
@@ -69,3 +70,28 @@ class HistorialCalificacionAdmin(admin.ModelAdmin):
     
     def has_delete_permission(self, request, obj=None):
         return False
+    
+    # auditoria de cambios en calificaciones
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.creado_por = request.user
+            super().save_model(request, obj, form, change)
+            HistorialCalificacion.objects.create(
+                calificacion=obj, usuario=request.user, accion='creacion', cambios={'via': 'admin'}
+            )
+        else:
+            anterior = Calificacion.objects.get(pk=obj.pk).to_dict()
+            super().save_model(request, obj, form, change)
+            nuevo = obj.to_dict()
+            HistorialCalificacion.objects.create(
+                calificacion=obj, usuario=request.user, accion='modificacion',
+                cambios={'anterior': anterior, 'nuevo': nuevo, 'via': 'admin'}
+            )
+            messages.add_message(request, messages.INFO, 'Cambios registrados en historial.')
+
+    def delete_model(self, request, obj):
+        from .models import Bitacora
+        Bitacora.objects.create(
+            entidad='Calificacion', accion='eliminacion', antes=obj.to_dict(), despues=None, usuario=request.user
+        )
+        super().delete_model(request, obj)

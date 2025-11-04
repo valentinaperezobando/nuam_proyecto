@@ -10,6 +10,9 @@ from django.conf import settings
 from django.conf.urls.static import static
 from app_nuam import admin_views
 from app_nuam.views import redirigir_despues_login
+from app_nuam import auditoria_views
+
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', home, name='home'),      
@@ -17,7 +20,6 @@ urlpatterns = [
     path('login/', LoginView.as_view(), name= 'login'),
     path('logout/', LogoutView.as_view(next_page= 'home'), name= 'logout'),
     path('carga_masiva/', carga_masiva, name='carga_masiva'),
-    path('auditoria/', auditoria, name='auditoria'),
     path('calificaciones/', listar_calificaciones, name='listar_calificaciones'),
     path('calificaciones/crear/', CrearCalificacionView.as_view(), name='crear_calificacion'),
     path('calificaciones/<int:pk>/editar/', EditarCalificacionView.as_view(), name='editar_calificacion'),
@@ -31,6 +33,12 @@ urlpatterns = [
     path('administracion/usuarios/', admin_views.lista_usuarios, name='lista_usuarios'),
     path('administracion/bitacora/', admin_views.lista_bitacora, name='lista_bitacora'),
     path('administracion/notificaciones/',admin_views.lista_notificaciones),
+    path('auditoria/', auditoria_views.panel_auditoria, name='auditoria'),
+    path('auditoria/archivos/', auditoria_views.auditar_archivos, name='auditoria_archivos'),
+    path('auditoria/calificaciones/', auditoria_views.auditar_calificaciones, name='auditoria_calificaciones'),
+    path('auditoria/reporte/archivos.csv', auditoria_views.exportar_archivos_csv, name='auditoria_rep_archivos'),
+    path('auditoria/reporte/calificaciones.csv', auditoria_views.exportar_calificaciones_csv, name='auditoria_rep_calificaciones'),
+    path('auditoria/reporte/lotes.csv', auditoria_views.exportar_lotes_csv, name='auditoria_rep_lotes')
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
