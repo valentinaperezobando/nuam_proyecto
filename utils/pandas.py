@@ -1,6 +1,7 @@
 import pandas as pd, json
 from app_nuam.models import Archivo, RegistroBruto
 from PyPDF2 import PdfReader
+from utils.notificaciones import notificar_error_admin
 import os
 import numpy as np
 
@@ -51,5 +52,14 @@ def procesar_archivo(archivo: Archivo):
     except Exception as e:
         archivo.estado = 'error'
         archivo.save()
+    
+    # Enviar notificación al admin
+        notificar_error_admin(
+            "Procesamiento de Archivo",
+            f"Error procesando {archivo.nombre}: {str(e)}"
+        )
+
+        # También puedes dejar el print para depuración local
         print(f"Error procesando {archivo.nombre}: {e}")
+
         raise e
