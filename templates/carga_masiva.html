@@ -50,11 +50,12 @@
             {%if archivo.estado == 'NORMALIZADO'%}
             <td>
                 <a href="/carga_masiva/detalles_registro/{{archivo.id}}" class="btn btn-primary btn-sm">Ver detalles</a>
+                <a href="/carga_masiva/eliminar_archivo/{{archivo.id}}" class="btn btn-danger btn-sm btn-eliminar">Eliminar</a>
             </td>
             {%else%}
             <td>
-                <a href="" class="btn btn-primary btn-sm">Probar</a>
-                <a href="/carga_masiva/normalizar/{{archivo.id}}" class="btn btn-warning btn-sm btn-eliminar">Normalizar</a>
+                <a href="/carga_masiva/normalizar/{{archivo.id}}" class="btn btn-warning btn-sm">Normalizar</a>
+                <a href="/carga_masiva/eliminar_archivo/{{archivo.id}}" class="btn btn-danger btn-sm btn-eliminar">Eliminar</a>
             </td>
             {%endif%}
         </tr>
@@ -68,7 +69,6 @@
 
 
 <script>
-
     document.addEventListener('DOMContentLoaded', ()=> {
         const dropzone = document.getElementById('dropzone');
         const inputFile = document.getElementById('archivo');

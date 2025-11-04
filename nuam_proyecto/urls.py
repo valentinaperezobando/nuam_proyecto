@@ -5,7 +5,7 @@ from app_nuam.views import (
     home, RegistroView, carga_masiva, auditoria, 
     listar_calificaciones, CrearCalificacionView, EditarCalificacionView,
     eliminar_calificacion, calcular_factores_calificacion, detalle_calificacion)
-from app_nuam.views import home, RegistroView, carga_masiva, auditoria, eliminar_calificacion, normalizar_archivo, detalles_registro
+from app_nuam.views import home, RegistroView, carga_masiva, auditoria, eliminar_calificacion, normalizar_archivo, detalles_registro, eliminar_archivo
 from django.conf import settings
 from django.conf.urls.static import static
 from app_nuam import admin_views
@@ -28,6 +28,7 @@ urlpatterns = [
     path('calificaciones/<int:pk>/', detalle_calificacion, name='detalle_calificacion'),
     path('carga_masiva/normalizar/<int:id>', normalizar_archivo, name='normalizar_archivo'),
     path('carga_masiva/detalles_registro/<int:id>', detalles_registro, name='detalles_registro'),
+    path('carga_masiva/eliminar_archivo/<int:id>', eliminar_archivo, name='eliminar_archivo'),
     path('post_login/', redirigir_despues_login, name='post_login'),
     path('administracion/', admin_views.panel_admin, name='panel_admin'),
     path('administracion/usuarios/', admin_views.lista_usuarios, name='lista_usuarios'),
