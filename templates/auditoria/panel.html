@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  .kpi {
+    border: 0;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 8px 28px rgba(0,0,0,.06);
+    overflow: hidden;
+  }
+  .kpi .icon {
+    width: 44px; height: 44px;
+    display: grid; place-items: center;
+    border-radius: 12px;
+    font-size: 1.25rem;
+  }
+  .kpi .label { font-size: .85rem; letter-spacing: .02em; color: #6c757d; }
+  .kpi .value { font-size: 2rem; font-weight: 800; line-height: 1; }
+
+  .panel-card {
+    border: 0;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 8px 28px rgba(0,0,0,.06);
+  }
+
+  .panel-title { font-weight: 700; }
+  .panel-sub   { font-size: .9rem; color: #6c757d; }
+
+  .chart-box { position: relative; height: 340px; }
+  @media (max-width: 768px) { .chart-box { height: 280px; } }
+
+  .list-slim .list-group-item {
+    border: 0;
+    border-bottom: 1px solid rgba(0,0,0,.05);
+    padding-left: 0; padding-right: 0;
+  }
+  .list-slim .list-group-item:last-child { border-bottom: 0; }
+
+  .pill {
+    display: inline-block;
+    font-size: .75rem;
+    padding: .15rem .5rem;
+    border-radius: 999px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    color: #6c757d;
+  }
+</style>
+
+<h2 class="mb-3">Panel</h2>
+
+<div class="row g-3 mb-2">
+  <div class="col-6 col-md-3">
+    <div class="kpi p-3 d-flex align-items-center justify-content-between">
+      <div>
+        <div class="label">Lotes</div>
+        <div class="value">{{ total_lotes }}</div>
+      </div>
+      <div class="icon bg-primary-subtle text-primary"><i class="bi bi-box-seam"></i></div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="kpi p-3 d-flex align-items-center justify-content-between">
+      <div>
+        <div class="label">Archivos</div>
+        <div class="value">{{ total_archivos }}</div>
+      </div>
+      <div class="icon bg-info-subtle text-info"><i class="bi bi-file-earmark-arrow-up"></i></div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="kpi p-3 d-flex align-items-center justify-content-between">
+      <div>
+        <div class="label">Reg. Normalizados</div>
+        <div class="value">{{ total_norm }}</div>
+      </div>
+      <div class="icon bg-success-subtle text-success"><i class="bi bi-diagram-3"></i></div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="kpi p-3 d-flex align-items-center justify-content-between">
+      <div>
+        <div class="label">Calificaciones</div>
+        <div class="value">{{ total_calif }}</div>
+      </div>
+      <div class="icon bg-warning-subtle text-warning"><i class="bi bi-clipboard-check"></i></div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="panel-card p-3">
+      <div class="d-flex justify-content-between align-items-end">
+        <div>
+          <div class="panel-title">Lotes creados</div>
+          <div class="panel-sub">Últimos 14 días</div>
+        </div>
+        <span class="pill">Tiempo real</span>
+      </div>
+      <div class="chart-box mt-2">
+        <canvas id="chartLotes"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="panel-card p-3">
+      <div class="panel-title mb-2">Últimos cambios en Calificaciones</div>
+      <ul class="list-group list-slim">
+        {% for h in ult_hist %}
+          <li class="list-group-item">
+            <b class="text-body">{{ h.accion|title }}</b> — {{ h.calificacion.instrumento }}
+            <span class="text-muted">({{ h.usuario.username }}) · {{ h.fecha|date:"Y-m-d H:i" }}</span>
+          </li>
+        {% empty %}
+          <li class="list-group-item text-muted">Sin registros</li>
+        {% endfor %}
+      </ul>
+
+      <div class="panel-title mt-3 mb-2">Última bitácora</div>
+      <ul class="list-group list-slim">
+        {% for b in ult_bitacora %}
+          <li class="list-group-item">
+            <b>{{ b.entidad }}</b> / {{ b.accion }}
+            <span class="text-muted">— {{ b.usuario.username }} · {{ b.fecha|date:"Y-m-d H:i" }}</span>
+          </li>
+        {% empty %}
+          <li class="list-group-item text-muted">Sin registros</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+
+  const lotes14d = {{ chart_lotes_14d|safe }};
+
+  function makeGradient(ctx, c1, c2) {
+    const g = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height);
+    g.addColorStop(0, c1);
+    g.addColorStop(1, c2);
+    return g;
+  }
+
+  (function(){
+    const ctx = document.getElementById('chartLotes').getContext('2d');
+    const bg  = makeGradient(ctx, 'rgba(13,110,253,.35)', 'rgba(13,110,253,.05)');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: lotes14d.labels,
+        datasets: [{
+          label: 'Lotes',
+          data: lotes14d.values,
+          fill: true,
+          tension: .25,
+          borderWidth: 2,
+          borderColor: '#0d6efd',
+          backgroundColor: bg,
+          pointRadius: 3,
+          pointBackgroundColor: '#0d6efd'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'top' }, tooltip: { mode: 'index', intersect: false } },
+        scales: {
+          y: { beginAtZero: true, ticks: { precision: 0 } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+  })();
+</script>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+{% endblock %}

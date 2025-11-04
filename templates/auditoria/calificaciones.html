@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  .filtros .form-control, .filtros .form-select { font-size:.9rem; }
+  .chart-card { border:0; border-radius:1rem; box-shadow:0 4px 16px rgba(0,0,0,.05); background:#fff; }
+  .chart-title { font-weight:600; color:#495057; }
+  .chart-wrap { position:relative; height:300px; }
+  .table-container { border-radius:1rem; box-shadow:0 4px 16px rgba(0,0,0,.05); background:#fff; overflow:hidden; }
+</style>
+
+<h2 class="mb-3"> Auditoría · Calificaciones</h2>
+
+<form class="row g-2 filtros mb-2">
+  <div class="col-md-3"><input name="q" class="form-control" placeholder="Instrumento/Descripción" value="{{ filtros.q }}"></div>
+  <div class="col-md-2"><input name="usuario" class="form-control" placeholder="Usuario" value="{{ filtros.usuario }}"></div>
+  <div class="col-md-2">
+    <select name="accion" class="form-select">
+      <option value="">Todas</option>
+      <option value="creacion"     {% if filtros.accion == 'creacion' %}selected{% endif %}>Creación</option>
+      <option value="modificacion" {% if filtros.accion == 'modificacion' %}selected{% endif %}>Modificación</option>
+      <option value="calculo"      {% if filtros.accion == 'calculo' %}selected{% endif %}>Cálculo</option>
+    </select>
+  </div>
+  <div class="col-md-2"><input name="desde" type="date" class="form-control" value="{{ filtros.desde }}"></div>
+  <div class="col-md-2"><input name="hasta" type="date" class="form-control" value="{{ filtros.hasta }}"></div>
+  <div class="col-12 d-flex justify-content-end gap-2">
+    <button class="btn btn-primary btn-sm px-4">Filtrar</button>
+    <a class="btn btn-success btn-sm px-4"
+       href="{% url 'auditoria_rep_calificaciones' %}?{{ request.GET.urlencode }}">
+      Exportar historial CSV
+    </a>
+  </div>
+</form>
+
+<div class="row g-4 mb-3">
+  <div class="col-md-6">
+    <div class="card chart-card p-3">
+      <div class="chart-title mb-2">Acciones (14 días)</div>
+      <div class="chart-wrap"><canvas id="chartHist"></canvas></div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card chart-card p-3">
+      <div class="chart-title mb-2">Estados de calificación</div>
+      <div class="chart-wrap"><canvas id="chartCalif"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-3">
+  <div class="col-md-12">
+    <div class="card chart-card p-3">
+      <div class="chart-title mb-2">Top usuarios (30 días)</div>
+      <div class="chart-wrap" style="height:260px"><canvas id="chartUsers"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<div class="table-container mt-2 p-3">
+  <h6 class="mb-3">Historial</h6>
+  <div class="table-responsive">
+    <table class="table table-sm table-hover align-middle mb-2">
+      <thead class="table-light">
+        <tr><th>Fecha</th><th>Acción</th><th>Instrumento</th><th>Usuario</th></tr>
+      </thead>
+      <tbody>
+        {% for h in page %}
+        <tr>
+          <td>{{ h.fecha|date:"Y-m-d H:i" }}</td>
+          <td>{{ h.accion }}</td>
+          <td>{{ h.calificacion.instrumento }}</td>
+          <td>{{ h.usuario.username }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="text-center text-muted py-3">Sin historial</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <nav>
+    <ul class="pagination pagination-sm mb-0">
+      {% if page.has_previous %}
+      <li class="page-item"><a class="page-link" href="?page={{ page.previous_page_number }}">«</a></li>
+      {% endif %}
+      <li class="page-item disabled">
+        <span class="page-link">Página {{ page.number }} de {{ page.paginator.num_pages }}</span>
+      </li>
+      {% if page.has_next %}
+      <li class="page-item"><a class="page-link" href="?page={{ page.next_page_number }}">»</a></li>
+      {% endif %}
+    </ul>
+  </nav>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const hist14d  = {{ chart_hist_14d|safe }};
+const califEst = {{ chart_calif_estado|safe }};
+const topUsers = {{ chart_top_users|safe }};
+const baseOpts = { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom' } } };
+
+const colors = {
+  creacion:     '#0d6efd', 
+  modificacion: '#d63384', 
+  calculo:      '#fd7e14', 
+};
+
+new Chart(document.getElementById('chartHist'), {
+  type:'line',
+  data:{
+    labels: hist14d.labels,
+    datasets:[
+      { label:'Creación',
+        data: hist14d.creacion,
+        borderColor: colors.creacion,
+        backgroundColor: colors.creacion,
+        pointBackgroundColor: colors.creacion,
+        pointRadius: 3,
+        tension:.25,
+        fill:false
+      },
+      { label:'Modificación',
+        data: hist14d.modificacion,
+        borderColor: colors.modificacion,
+        backgroundColor: colors.modificacion,
+        pointBackgroundColor: colors.modificacion,
+        pointRadius: 3,
+        tension:.25,
+        fill:false
+      },
+      { label:'Cálculo',
+        data: hist14d.calculo,
+        borderColor: colors.calculo,
+        backgroundColor: colors.calculo,
+        pointBackgroundColor: colors.calculo,
+        pointRadius: 3,
+        tension:.25,
+        fill:false
+      },
+    ]
+  },
+  options: Object.assign({}, baseOpts, {
+    scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } },
+    spanGaps: true
+  })
+});
+
+new Chart(document.getElementById('chartCalif'), {
+  type:'bar',
+  data:{ labels: califEst.labels, datasets:[{ label:'Calificaciones', data: califEst.values }] },
+  options: Object.assign({}, baseOpts, { plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } } })
+});
+
+new Chart(document.getElementById('chartUsers'), {
+  type:'bar',
+  data:{ labels: topUsers.labels, datasets:[{ label:'Movimientos', data: topUsers.values }] },
+  options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ x:{ beginAtZero:true, ticks:{ precision:0 } } } }
+});
+</script>
+
+
+{% endblock %}
