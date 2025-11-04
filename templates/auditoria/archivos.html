@@ -110,22 +110,64 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 const porEstado = {{ chart_por_estado|safe }};
 const porTipo   = {{ chart_por_tipo|safe }};
 
-const palette = ['#0d6efd','#6f42c1','#20c997','#ffc107','#dc3545','#198754','#0dcaf0'];
+// Paletas agradables y consistentes
+const colors = {
+  estados: ['#0d6efd', '#198754', '#ffc107', '#dc3545', '#6f42c1'], // azul, verde, amarillo, rojo, violeta
+  tipos:   ['#20c997', '#0dcaf0', '#6610f2', '#fd7e14', '#d63384']  // verde agua, cian, violeta, naranjo, rosado
+};
 
+// ====== Archivos por estado ======
 new Chart(document.getElementById('chartEstado'), {
   type: 'pie',
-  data: { labels: porEstado.labels, datasets: [{ data: porEstado.values, backgroundColor: palette }] },
-  options: { plugins: { legend: { position: 'bottom' } }, responsive: true, maintainAspectRatio: false }
+  data: {
+    labels: porEstado.labels,
+    datasets: [{
+      data: porEstado.values,
+      backgroundColor: colors.estados.slice(0, porEstado.labels.length),
+      borderColor: '#fff',
+      borderWidth: 2
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom' },
+      tooltip: { callbacks: {
+        label: ctx => `${ctx.label}: ${ctx.parsed} (${((ctx.parsed / ctx.chart._metasets[0].total) * 100).toFixed(1)}%)`
+      }}
+    }
+  }
 });
 
+// ====== Archivos por tipo ======
 new Chart(document.getElementById('chartTipo'), {
   type: 'doughnut',
-  data: { labels: porTipo.labels, datasets: [{ data: porTipo.values, backgroundColor: palette }] },
-  options: { cutout: '55%', plugins: { legend: { position: 'bottom' } }, responsive: true, maintainAspectRatio: false }
+  data: {
+    labels: porTipo.labels,
+    datasets: [{
+      data: porTipo.values,
+      backgroundColor: colors.tipos.slice(0, porTipo.labels.length),
+      borderColor: '#fff',
+      borderWidth: 2
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '60%',
+    plugins: {
+      legend: { position: 'bottom' },
+      tooltip: { callbacks: {
+        label: ctx => `${ctx.label}: ${ctx.parsed} (${((ctx.parsed / ctx.chart._metasets[0].total) * 100).toFixed(1)}%)`
+      }}
+    }
+  }
 });
 </script>
 
