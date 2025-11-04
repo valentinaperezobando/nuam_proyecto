@@ -2,7 +2,7 @@
 {%load static%}
 {%block content%}
 <div>
-    <h1 class="text-center">Carga de archivos</h1>
+    <h1 class="text-center py-4">Carga de archivos</h1>
     <form action="{% url 'carga_masiva' %}" method="post" enctype="multipart/form-data">
         {% csrf_token %}
 
@@ -26,13 +26,12 @@
                 </div>
             </div>
             <div class="row">
-                <div class="col-md-3 offset-md-9 text-end mt-2">
+                <div class="col-md-3 offset-md-9 text-end mt-2 py-3">
                     <input type="submit" value="Grabar" class="btn btn-outline-success">                    
                 </div>
             </div>
         </div>
     </form>
-    <div class="btn btn-primary mt-2">Cancelar</div>
 
     {%if archivos%}
 
