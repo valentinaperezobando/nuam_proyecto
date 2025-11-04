@@ -102,6 +102,14 @@ def carga_masiva(request):
             except Exception as e:
                 messages.error(request, f'Error procesando {file.name}; {e}')
                 
+                notificacion = Notificacion.objects.create(
+                    usuario = request.user,
+                    tipo = 'ERROR',
+                    mensaje = f'Error al procesar el archivo {file.name}',
+                    nivel = 'medio'
+                )
+                notificacion.save()
+            
         archivos = Archivo.objects.all()    
         messages.success(request, f"{len(archivos_subidos)} archivos cargados en el lote {lote_actual.id}")
         return render(request, 'carga_masiva.html',  {'archivos': archivos})
@@ -117,6 +125,9 @@ def normalizar_archivo(request, id):
     mapping = plantilla.mappingJson
     factores= plantilla.factoresJson
     filas = registro_bruto.payloadJson.get("datos", [])
+    ok =True
+    errores = 0
+    
     if isinstance(filas, str):
         filas = json.loads(filas)
     if isinstance(filas, dict):
@@ -203,16 +214,36 @@ def normalizar_archivo(request, id):
 
             archivo.estado = "NORMALIZADO"
             archivo.save()
+            
         except Exception as e:
-            # Capturar y seguir creando los demás registros
-            messages.error(request, f'Error normalizando fila: {e}')
-    messages.success(request, f'{registros_creados} registros normalizados exitosamente')
+            ok = False
+            notificacion = Notificacion.objects.create(
+                usuario = request.user,
+                tipo = 'ERROR',
+                mensaje = f'Error al normalizar el archivo {archivo.nombre}, {e}',
+                nivel = 'ERROR'
+            )
+            notificacion.save()
+            errores+=1
+    if ok == False:
+        messages.error(request, f'Error al normalizar {errores} registros en {archivo.nombre}. No hay correspondencia con datos tributarios' )
+    else:
+        messages.success(request, f'{registros_creados} registros normalizados exitosamente')
     return redirect('carga_masiva')
 
 def detalles_registro(request, id):
     archivo = Archivo.objects.get(id=id)
     normalizados = RegistroNormalizado.objects.filter(archivo = archivo)
     return render(request, 'detalles_registro.html', {'normalizados': normalizados})
+
+def eliminar_archivo(request, id):
+    try: 
+        archivo = Archivo.objects.get(id=id)
+        archivo.delete()
+        messages.success(request, 'Archivo eliminado correctamente.')
+        return redirect('/carga_masiva/')
+    except Exception as e:
+        messages.error(request, f"Error al eliminar el archivo: {str(e)}")
 
 def auditoria(request):
     perfil = getattr(request.user, 'usuario', None)
