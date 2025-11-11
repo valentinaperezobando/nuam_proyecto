@@ -40,9 +40,15 @@
 
                                 <dt class="col-sm-4">Estado:</dt>
                                 <dd class="col-sm-8">
-                                    <span class="badge bg-{{ calificacion.estado }}">
-                                        {{ calificacion.get_estado_display }}
-                                    </span>
+                                    {% if calificacion.estado == 'completado' %}
+                                            <span class="badge bg-success">Completado</span>
+                                        {% elif calificacion.estado == 'pendiente' %}
+                                            <span class="badge bg-warning text-dark">Pendiente</span>
+                                        {% elif calificacion.estado == 'error' %}
+                                            <span class="badge bg-danger">Error</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ calificacion.estado|capfirst }}</span>
+                                        {% endif %}
                                 </dd>
                             </dl>
                         </div>
