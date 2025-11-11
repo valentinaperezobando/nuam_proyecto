@@ -8,7 +8,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
 from utils.pandas import procesar_archivo
 from .forms import CalificacionForm, FiltroCalificacionesForm
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from datetime import datetime
 import os, hashlib
 import json
@@ -342,74 +342,101 @@ class EditarCalificacionView(LoginRequiredMixin, View):
             messages.warning(request, 'No tienes permisos para acceder a esta sección')
             return redirect('home')
         return super().dispatch(request, *args, **kwargs)
-    
+
     def get(self, request, pk):
         calificacion = get_object_or_404(Calificacion, pk=pk)
         form = CalificacionForm(instance=calificacion)
-        # pasar estados a la plantilla para renderizar select
         return render(request, 'calificaciones/editar_calificacion.html', {
             'form': form,
             'calificacion': calificacion,
             'estados': Calificacion.ESTADOS
         })
-    
+
     def post(self, request, pk):
         calificacion = get_object_or_404(Calificacion, pk=pk)
-        
-        # Guardar estado anterior para historial
-        datos_anteriores = getattr(calificacion, 'to_dict', lambda: None)()
-        
+        datos_anteriores = getattr(calificacion, 'to_dict', lambda: {})()
+
         form = CalificacionForm(request.POST, instance=calificacion)
+        # recolectar factores calculados desde POST y formatearlos a 8 decimales
+        factores_calc = {}
+        errores = []
+        suma_base = Decimal('0')
+        for i in range(8, 20):  # para validar suma 08..19
+            raw = request.POST.get(f'factor_{i}', '') or '0'
+            try:
+                d = Decimal(str(raw))
+            except (InvalidOperation, ValueError):
+                # intentar reemplazos comunes
+                try:
+                    d = Decimal(str(raw).replace(',', '.'))
+                except Exception:
+                    d = Decimal('0')
+            # normalizar a 8 decimales
+            d = d.quantize(Decimal('0.00000001'), rounding=ROUND_HALF_UP)
+            factores_calc[f'factor_{i}'] = str(d)  # guardar como string para mantener formato 8 decimales
+            suma_base += d
+
+        # validar suma 08..19 <= 1
+        if suma_base > Decimal('1'):
+            errores.append('La suma de los factores 08 a 19 no puede superar 1.0')
         
-        if form.is_valid():
-            calificacion_actualizada = form.save(commit=False)
+        # completar el resto de factores 20..37
+        for i in range(20, 38):
+            raw = request.POST.get(f'factor_{i}', '') or '0'
+            try:
+                d = Decimal(str(raw))
+            except (InvalidOperation, ValueError):
+                try:
+                    d = Decimal(str(raw).replace(',', '.'))
+                except Exception:
+                    d = Decimal('0')
+            d = d.quantize(Decimal('0.00000001'), rounding=ROUND_HALF_UP)
+            factores_calc[f'factor_{i}'] = str(d)
 
-            # Validar y asignar nuevo estado conservando el tipo original de la choice
-            nuevo_estado_raw = request.POST.get('estado')
+        if not form.is_valid() or errores:
+            # si hay errores, mostramos mensajes y re-renderizamos usando los factores enviados
+            for e in errores:
+                messages.error(request, e)
+            # inyectar factores calculados temporales para que el template muestre lo enviado
+            calificacion.factores_calculados = factores_calc
+            return render(request, 'calificaciones/editar_calificacion.html', {
+                'form': form,
+                'calificacion': calificacion,
+                'estados': Calificacion.ESTADOS
+            })
+
+        # guardar form y asignar factores_calculados
+        cal = form.save(commit=False)
+
+        # asignar estado respetando tipos de Calificacion.ESTADOS
+        nuevo_estado_raw = request.POST.get('estado')
+        if nuevo_estado_raw is not None:
             nuevo_estado_assignado = None
-            if nuevo_estado_raw is not None:
-                # Buscar la key original en Calificacion.ESTADOS (respetando tipos)
-                for key, label in getattr(Calificacion, 'ESTADOS', []):
-                    try:
-                        # comparar por string para evitar problemas de tipo
-                        if str(key) == str(nuevo_estado_raw):
-                            nuevo_estado_assignado = key
-                            break
-                    except Exception:
-                        continue
-
+            for key, label in getattr(Calificacion, 'ESTADOS', []):
+                if str(key) == str(nuevo_estado_raw):
+                    nuevo_estado_assignado = key
+                    break
             if nuevo_estado_assignado is not None:
-                calificacion_actualizada.estado = nuevo_estado_assignado
+                cal.estado = nuevo_estado_assignado
 
-            # Guardar cambios (primera pasada)
-            calificacion_actualizada.save()
+        # asignar los factores calculados (como strings con 8 decimales)
+        cal.factores_calculados = factores_calc
+        # en edición no modificamos 'factores' originales (se usan solo como referencia)
+        cal.save()
 
-            # Forzar persistencia del estado tal como el usuario lo pidió (evita sobreescrituras posteriores)
-            if nuevo_estado_assignado is not None:
-                # actualizamos directamente en la BD con el valor original (tipo correcto)
-                Calificacion.objects.filter(pk=calificacion_actualizada.pk).update(estado=nuevo_estado_assignado)
-
-            # Crear entrada en historial
+        # crear historial
+        try:
             HistorialCalificacion.objects.create(
-                calificacion=calificacion_actualizada,
+                calificacion=cal,
                 usuario=request.user,
                 accion='modificacion',
-                cambios={
-                    'anterior': datos_anteriores,
-                    'nuevo': getattr(calificacion_actualizada, 'to_dict', lambda: None)()
-                }
+                cambios={'anterior': datos_anteriores, 'nuevo_estado': cal.estado}
             )
-            
-            messages.success(request, 'Calificación actualizada exitosamente')
-            return redirect('listar_calificaciones')
-        else:
-            messages.error(request, 'Error al actualizar la calificación')
-        
-        return render(request, 'calificaciones/editar_calificacion.html', {
-            'form': form,
-            'calificacion': calificacion,
-            'estados': Calificacion.ESTADOS
-        })
+        except Exception:
+            pass
+
+        messages.success(request, 'Calificación actualizada correctamente')
+        return redirect('listar_calificaciones')
 
 
 @login_required
